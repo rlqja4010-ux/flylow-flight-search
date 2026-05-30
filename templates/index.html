@@ -245,6 +245,42 @@ nav { background:var(--blue); padding:0 32px; display:flex; align-items:center; 
 .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(60px); background:#1a1a2e; color:#fff; padding:12px 24px; border-radius:12px; font-size:14px; font-weight:600; z-index:9999; transition:.3s; opacity:0; }
 .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
 
+/* PRICE CALENDAR */
+.cal-toggle-btn {
+  width:100%; padding:10px 16px; background:var(--sky); color:var(--blue);
+  border:1.5px solid var(--border); border-radius:12px; font-size:13px; font-weight:700;
+  cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;
+  transition:.2s; margin-bottom:8px;
+}
+.cal-toggle-btn:hover, .cal-toggle-btn.active { background:#dbeafe; border-color:var(--blue); }
+.price-cal-wrap { border:1.5px solid var(--border); border-radius:14px; overflow:hidden; display:none; margin-bottom:8px; }
+.price-cal-wrap.open { display:block; }
+.price-cal-header { background:var(--sky); padding:12px 16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+.price-cal-header h4 { font-size:13px; font-weight:700; color:var(--blue); }
+.cal-month-nav { display:flex; align-items:center; gap:8px; }
+.cal-nav-btn { background:#fff; border:1.5px solid var(--blue); color:var(--blue); border-radius:8px; width:28px; height:28px; cursor:pointer; font-weight:700; font-size:14px; }
+.cal-month-label { font-size:13px; font-weight:700; color:var(--text); min-width:80px; text-align:center; }
+.price-cal-body { padding:10px 12px 12px; background:#fff; }
+.price-cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+.cal-day-label { text-align:center; font-size:10px; font-weight:700; color:var(--gray); padding:4px 2px; }
+.cal-cell { text-align:center; padding:5px 2px; border-radius:8px; border:1.5px solid transparent; transition:.15s; min-height:46px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.cal-cell:not(.empty):not(.no-price):hover { border-color:var(--blue); cursor:pointer; }
+.cal-cell .cal-date { font-size:12px; font-weight:700; }
+.cal-cell .cal-price { font-size:9px; font-weight:600; margin-top:2px; white-space:nowrap; }
+.cal-cell.empty { cursor:default; }
+.cal-cell.has-price { background:var(--sky); }
+.cal-cell.cheap { background:#fef9c3; }
+.cal-cell.cheap .cal-price { color:#b45309; }
+.cal-cell.cheapest { background:#dcfce7; border-color:#16a34a !important; }
+.cal-cell.cheapest .cal-price { color:#16a34a; font-weight:800; }
+.cal-cell.no-price { cursor:default; opacity:.45; }
+.cal-cell.selected { background:var(--blue) !important; border-color:var(--blue-dark) !important; }
+.cal-cell.selected .cal-date, .cal-cell.selected .cal-price { color:#fff !important; }
+.price-cal-loading { text-align:center; padding:28px; color:var(--gray); font-size:13px; }
+.cal-legend { display:flex; gap:12px; margin-top:8px; flex-wrap:wrap; }
+.cal-legend-item { display:flex; align-items:center; gap:4px; font-size:10px; color:var(--gray); }
+.cal-legend-dot { width:10px; height:10px; border-radius:3px; }
+
 @media(max-width:640px) {
   .hero h1 { font-size:26px; }
   .card-main { flex-direction:column; align-items:flex-start; }
@@ -328,6 +364,22 @@ nav { background:var(--blue); padding:0 32px; display:flex; align-items:center; 
               <option value="FIRST">퍼스트</option>
             </select>
           </div>
+        </div>
+      </div>
+
+      <!-- PRICE CALENDAR -->
+      <button class="cal-toggle-btn" id="calToggleBtn" onclick="togglePriceCal()">📅 날짜별 최저가 보기</button>
+      <div class="price-cal-wrap" id="priceCalWrap">
+        <div class="price-cal-header">
+          <h4 id="calRouteTitle">출발지와 도착지를 선택하면 날짜별 최저가를 확인할 수 있어요</h4>
+          <div class="cal-month-nav">
+            <button class="cal-nav-btn" onclick="calChangeMonth(-1)">‹</button>
+            <span class="cal-month-label" id="calMonthLabel">--</span>
+            <button class="cal-nav-btn" onclick="calChangeMonth(1)">›</button>
+          </div>
+        </div>
+        <div class="price-cal-body" id="priceCalBody">
+          <div class="price-cal-loading">출발지와 도착지를 먼저 선택해주세요 ✈️</div>
         </div>
       </div>
 
@@ -1189,6 +1241,148 @@ function toast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg; el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ── PRICE CALENDAR ──
+let calState = { open: false, month: '', data: [] };
+
+function togglePriceCal() {
+  const wrap = document.getElementById('priceCalWrap');
+  const btn  = document.getElementById('calToggleBtn');
+  calState.open = !calState.open;
+  wrap.classList.toggle('open', calState.open);
+  btn.classList.toggle('active', calState.open);
+  btn.textContent = calState.open ? '📅 날짜별 최저가 닫기' : '📅 날짜별 최저가 보기';
+  if (calState.open) {
+    const from = document.getElementById('fromCode').value;
+    const to   = document.getElementById('toCode').value;
+    if (!from || !to) {
+      document.getElementById('priceCalBody').innerHTML = '<div class="price-cal-loading">출발지와 도착지를 먼저 선택해주세요 ✈️</div>';
+      return;
+    }
+    if (!calState.month) {
+      const dep = document.getElementById('departDate').value;
+      const d = dep ? new Date(dep) : new Date();
+      calState.month = d.toISOString().slice(0,7);
+    }
+    loadPriceCal();
+  }
+}
+
+function calChangeMonth(delta) {
+  if (!calState.month) return;
+  const [y, m] = calState.month.split('-').map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  const now = new Date();
+  if (d < new Date(now.getFullYear(), now.getMonth(), 1)) return;
+  calState.month = d.toISOString().slice(0, 7);
+  loadPriceCal();
+}
+
+async function loadPriceCal() {
+  const from = document.getElementById('fromCode').value;
+  const to   = document.getElementById('toCode').value;
+  if (!from || !to) return;
+
+  const [y, m] = calState.month.split('-').map(Number);
+  document.getElementById('calMonthLabel').textContent = `${y}년 ${m}월`;
+  document.getElementById('calRouteTitle').textContent = `${from} → ${to}  날짜별 최저가`;
+  document.getElementById('priceCalBody').innerHTML = '<div class="price-cal-loading">⏳ 날짜별 가격 불러오는 중...</div>';
+
+  try {
+    const isRT = tripType === 'roundtrip';
+    const res = await fetch('/api/flexible', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ from, to, month: calState.month, tripType: isRT ? 'roundtrip' : 'oneway' })
+    });
+    const data = await res.json();
+    if (data.success && data.results && data.results.length) {
+      calState.data = data.results;
+      renderPriceCal();
+    } else {
+      document.getElementById('priceCalBody').innerHTML =
+        '<div class="price-cal-loading">😢 이 달 가격 데이터가 없습니다. 다른 달을 선택해보세요.</div>';
+    }
+  } catch {
+    document.getElementById('priceCalBody').innerHTML =
+      '<div class="price-cal-loading">⚠️ 가격 정보를 불러올 수 없습니다</div>';
+  }
+}
+
+function renderPriceCal() {
+  const [year, mon] = calState.month.split('-').map(Number);
+  const firstDow   = new Date(year, mon - 1, 1).getDay();
+  const daysInMonth = new Date(year, mon, 0).getDate();
+
+  const priceMap = {};
+  calState.data.forEach(d => { priceMap[d.departureDate] = parseFloat(d.price); });
+  const prices = Object.values(priceMap).filter(p => p > 0);
+  if (!prices.length) {
+    document.getElementById('priceCalBody').innerHTML =
+      '<div class="price-cal-loading">😢 이 달 가격 데이터가 없습니다.</div>';
+    return;
+  }
+  const minPrice = Math.min(...prices);
+  const cheapThresh = minPrice * 1.2;
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const selectedDate = document.getElementById('departDate').value;
+
+  const dayLabels = ['일','월','화','수','목','금','토'];
+  let html = '<div class="price-cal-grid">';
+  html += dayLabels.map((d,i) =>
+    `<div class="cal-day-label" style="${i===0?'color:#ef4444':i===6?'color:#3b82f6':''}">${d}</div>`
+  ).join('');
+
+  for (let i = 0; i < firstDow; i++) html += '<div class="cal-cell empty"></div>';
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const ds = `${year}-${String(mon).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const cellDate = new Date(year, mon - 1, day);
+    const isPast  = cellDate < today;
+    const price   = priceMap[ds];
+    const isSel   = ds === selectedDate;
+    const dow     = cellDate.getDay();
+    const dateColor = dow===0 ? ' style="color:#ef4444"' : dow===6 ? ' style="color:#3b82f6"' : '';
+
+    let cls = 'cal-cell';
+    let priceHtml = '<div class="cal-price">-</div>';
+
+    if (isPast) {
+      cls += ' no-price';
+    } else if (price) {
+      if (price === minPrice) cls += ' cheapest';
+      else if (price <= cheapThresh) cls += ' cheap';
+      else cls += ' has-price';
+      const fmt = price >= 100000 ? Math.round(price/10000)+'만' : Math.round(price).toLocaleString();
+      priceHtml = `<div class="cal-price">${fmt}원</div>`;
+    } else {
+      cls += ' no-price';
+    }
+    if (isSel) cls += ' selected';
+
+    const onClick = (!isPast && price) ? `onclick="pickCalDate('${ds}')"` : '';
+    html += `<div class="${cls}" ${onClick}>
+      <div class="cal-date"${dateColor}>${day}</div>${priceHtml}
+    </div>`;
+  }
+  html += '</div>';
+  html += `<div class="cal-legend">
+    <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#dcfce7;border:1px solid #16a34a"></div>최저가</div>
+    <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#fef9c3"></div>저렴 (최저가 +20% 이내)</div>
+    <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--sky)"></div>보통</div>
+  </div>`;
+  document.getElementById('priceCalBody').innerHTML = html;
+}
+
+function pickCalDate(ds) {
+  document.getElementById('departDate').value = ds;
+  const d = new Date(ds);
+  d.setDate(d.getDate() + 7);
+  document.getElementById('returnDate').value = d.toISOString().slice(0,10);
+  renderPriceCal();
+  toast(`${ds} 선택됨 ✅`);
 }
 </script>
 </body>
