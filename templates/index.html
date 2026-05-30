@@ -914,47 +914,67 @@ function buildPriceTable(f) {
   const ret0 = isRT ? curSearch.returnDate.replace(/-/g,'') : '';
   const retDate = curSearch.returnDate || '';
 
-  const myPrice = fmtPrice(f.price, f.currency);
-  const otherSrc = findOtherSourcePrice(f);
+  // 실제 API 가격만 수집
+  const myVal = parseFloat(f.price) || 0;
+  const myLabel = fmtPrice(f.price, f.currency);
+  const mySrc = f.source === 'Amadeus' ? 'Amadeus GDS' : 'Skyscanner';
 
-  // API 가격 (실제 데이터)
-  const apiRows = [
-    { name: f.source === 'Amadeus' ? 'Amadeus GDS' : 'Skyscanner', price: myPrice, tag:'api', url: null },
+  const other = findOtherSourcePrice(f);
+  const otherVal = other ? parseFloat(allResults.find(r => r.source === other.src && r.legs[0].from === leg0.from)?.price || 0) : 0;
+
+  // 두 소스 중 최저가 판별
+  const prices = [{ src: mySrc, val: myVal, label: myLabel }];
+  if (other) prices.push({ src: other.src === 'Amadeus' ? 'Amadeus GDS' : 'Skyscanner', val: parseFloat(other.price?.replace(/[^0-9]/g,'')||0), label: other.price });
+  prices.sort((a,b) => a.val - b.val);
+  const lowestVal = prices[0].val;
+
+  // 예약 링크 URL 생성
+  const urls = {
+    naver:      isRT ? `https://flight.naver.com/flights/international/${fr}-${to}-${dep0}/${to}-${fr}-${ret0}?adult=${ad}&fareType=Y` : `https://flight.naver.com/flights/international/${fr}-${to}-${dep0}?adult=${ad}&fareType=Y`,
+    skyscanner: isRT ? `https://www.skyscanner.co.kr/transport/flights/${fr}/${to}/${dep0}/${ret0}/` : `https://www.skyscanner.co.kr/transport/flights/${fr}/${to}/${dep0}/`,
+    google:     isRT ? `https://www.google.com/travel/flights?q=${fr}+to+${to}+${depDate}+return+${retDate}` : `https://www.google.com/travel/flights?q=${fr}+to+${to}+${depDate}`,
+    kayak:      isRT ? `https://www.kayak.co.kr/flights/${fr}-${to}/${dep0}/${ret0}/${ad}adults` : `https://www.kayak.co.kr/flights/${fr}-${to}/${dep0}/${ad}adults`,
+    expedia:    isRT ? `https://www.expedia.co.kr/Flights-Search?trip=roundtrip&leg1=from:${fr},to:${to},departure:${depDate}TANYT&leg2=from:${to},to:${fr},departure:${retDate}TANYT&passengers=adults:${ad}` : `https://www.expedia.co.kr/Flights-Search?trip=oneway&leg1=from:${fr},to:${to},departure:${depDate}TANYT&passengers=adults:${ad}`,
+    trip:       isRT ? `https://kr.trip.com/flights/roundtrip/${fr}-${to}/?depdate=${depDate}&retdate=${retDate}&adult=${ad}` : `https://kr.trip.com/flights/oneway/${fr}-${to}/?depdate=${depDate}&adult=${ad}`,
+    interpark:  isRT ? `https://fly.interpark.com/flight/search?tripType=RT&depCity=${fr}&arrCity=${to}&depDate=${dep0}&retDate=${ret0}&adultCnt=${ad}` : `https://fly.interpark.com/flight/search?tripType=OW&depCity=${fr}&arrCity=${to}&depDate=${dep0}&adultCnt=${ad}`,
+    hana:       isRT ? `https://www.hanatour.com/flight/search?tripType=RT&depApo=${fr}&arrApo=${to}&depDt=${dep0}&retDt=${ret0}&adtCnt=${ad}` : `https://www.hanatour.com/flight/search?tripType=OW&depApo=${fr}&arrApo=${to}&depDt=${dep0}&adtCnt=${ad}`,
+    modu:       isRT ? `https://flight.modetour.com/search?tripType=RT&departure=${fr}&destination=${to}&departureDate=${dep0}&returnDate=${ret0}&adultCount=${ad}` : `https://flight.modetour.com/search?tripType=OW&departure=${fr}&destination=${to}&departureDate=${dep0}&adultCount=${ad}`,
+    momondo:    isRT ? `https://www.momondo.kr/flight-search/${fr}-${to}/${dep0}/${ret0}/${ad}adults` : `https://www.momondo.kr/flight-search/${fr}-${to}/${dep0}/${ad}adults`,
+  };
+
+  // API 가격 셀 (실제 가격)
+  const apiHtml = prices.map(p => {
+    const isBest = p.val === lowestVal && prices.length > 1;
+    const srcUrl = p.src === 'Skyscanner' ? urls.skyscanner : null;
+    const inner = `
+      <div style="display:flex;align-items:center;gap:6px">
+        <div class="site-name">${p.src}</div>
+        ${isBest ? '<span style="font-size:10px;background:#fef9c3;color:#b45309;padding:2px 6px;border-radius:6px;font-weight:700">최저가</span>' : ''}
+      </div>
+      <div class="site-price" style="${isBest?'color:#16a34a':''}">${p.label}</div>
+      <div class="site-tag tag-api">실시간 API</div>`;
+    return srcUrl
+      ? `<a class="price-cell" href="${srcUrl}" target="_blank" style="${isBest?'border-color:#16a34a':''}">${inner}</a>`
+      : `<div class="price-cell" style="${isBest?'border-color:#16a34a':''}">${inner}</div>`;
+  }).join('');
+
+  // 예약 링크 전용 (가격 없음 — 바로가기만)
+  const bookSites = [
+    {n:'네이버항공', url:urls.naver}, {n:'구글플라이트', url:urls.google},
+    {n:'카약', url:urls.kayak}, {n:'익스피디아', url:urls.expedia},
+    {n:'트립닷컴', url:urls.trip}, {n:'인터파크', url:urls.interpark},
+    {n:'하나투어', url:urls.hana}, {n:'모두투어', url:urls.modu}, {n:'모몬도', url:urls.momondo},
   ];
-  if (otherSrc) {
-    apiRows.push({ name: otherSrc.src === 'Amadeus' ? 'Amadeus GDS' : 'Skyscanner', price: otherSrc.price, tag:'api', url: null });
-  }
-
-  // 링크 전용 사이트 (가격 클릭 시 이동)
-  const linkRows = [
-    { name:'네이버항공',  url: isRT ? `https://flight.naver.com/flights/international/${fr}-${to}-${dep0}/${to}-${fr}-${ret0}?adult=${ad}&fareType=Y` : `https://flight.naver.com/flights/international/${fr}-${to}-${dep0}?adult=${ad}&fareType=Y` },
-    { name:'구글플라이트', url: isRT ? `https://www.google.com/travel/flights?q=${fr}+to+${to}+${depDate}+return+${retDate}` : `https://www.google.com/travel/flights?q=${fr}+to+${to}+${depDate}` },
-    { name:'카약',        url: isRT ? `https://www.kayak.co.kr/flights/${fr}-${to}/${dep0}/${ret0}/${ad}adults` : `https://www.kayak.co.kr/flights/${fr}-${to}/${dep0}/${ad}adults` },
-    { name:'익스피디아',  url: isRT ? `https://www.expedia.co.kr/Flights-Search?trip=roundtrip&leg1=from:${fr},to:${to},departure:${depDate}TANYT&leg2=from:${to},to:${fr},departure:${retDate}TANYT&passengers=adults:${ad}` : `https://www.expedia.co.kr/Flights-Search?trip=oneway&leg1=from:${fr},to:${to},departure:${depDate}TANYT&passengers=adults:${ad}` },
-    { name:'트립닷컴',    url: isRT ? `https://kr.trip.com/flights/roundtrip/${fr}-${to}/?depdate=${depDate}&retdate=${retDate}&adult=${ad}` : `https://kr.trip.com/flights/oneway/${fr}-${to}/?depdate=${depDate}&adult=${ad}` },
-    { name:'인터파크',    url: isRT ? `https://fly.interpark.com/flight/search?tripType=RT&depCity=${fr}&arrCity=${to}&depDate=${dep0}&retDate=${ret0}&adultCnt=${ad}` : `https://fly.interpark.com/flight/search?tripType=OW&depCity=${fr}&arrCity=${to}&depDate=${dep0}&adultCnt=${ad}` },
-    { name:'하나투어',    url: isRT ? `https://www.hanatour.com/flight/search?tripType=RT&depApo=${fr}&arrApo=${to}&depDt=${dep0}&retDt=${ret0}&adtCnt=${ad}` : `https://www.hanatour.com/flight/search?tripType=OW&depApo=${fr}&arrApo=${to}&depDt=${dep0}&adtCnt=${ad}` },
-    { name:'모두투어',    url: isRT ? `https://flight.modetour.com/search?tripType=RT&departure=${fr}&destination=${to}&departureDate=${dep0}&returnDate=${ret0}&adultCount=${ad}` : `https://flight.modetour.com/search?tripType=OW&departure=${fr}&destination=${to}&departureDate=${dep0}&adultCount=${ad}` },
-    { name:'모몬도',      url: isRT ? `https://www.momondo.kr/flight-search/${fr}-${to}/${dep0}/${ret0}/${ad}adults` : `https://www.momondo.kr/flight-search/${fr}-${to}/${dep0}/${ad}adults` },
-  ];
-
-  const apiHtml = apiRows.map(r => `
-    <div class="price-cell">
-      <div class="site-name">${r.name}</div>
-      <div class="site-price">${r.price}</div>
-      <div class="site-tag tag-api">실시간 API</div>
-    </div>`).join('');
-
-  const linkHtml = linkRows.map(r => `
-    <a class="price-cell" href="${r.url}" target="_blank">
-      <div class="site-name">${r.name}</div>
-      <div class="site-price check">가격 확인 →</div>
-      <div class="site-tag tag-link">사이트에서 확인</div>
+  const bookHtml = bookSites.map(s =>
+    `<a class="price-cell" href="${s.url}" target="_blank">
+      <div class="site-name">${s.n}</div>
+      <div class="site-price" style="font-size:12px;color:var(--blue)">예약하러 가기 →</div>
+      <div class="site-tag tag-link">API 미지원</div>
     </a>`).join('');
 
   return `<div class="price-compare">
-    <div class="price-compare-title">사이트별 가격 비교 · ${isRT?'왕복':'편도'} ${ad}인</div>
-    <div class="price-table">${apiHtml}${linkHtml}</div>
+    <div class="price-compare-title">💰 가격 비교 · ${isRT?'왕복':'편도'} ${ad}인 — API 실시간가 ${prices.length}개 | 예약 바로가기 ${bookSites.length}개</div>
+    <div class="price-table">${apiHtml}${bookHtml}</div>
   </div>`;
 }
 
