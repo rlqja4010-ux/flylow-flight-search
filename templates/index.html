@@ -6,311 +6,539 @@
 <title>FlyLow — 항공권 최저가</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✈️</text></svg>">
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 :root {
-  --blue:#0057FF; --blue-dark:#003ECC; --sky:#E8F0FF;
-  --text:#1a1a2e; --gray:#6b7280; --light:#f3f4f6;
-  --border:#e5e7eb; --green:#10b981; --red:#ef4444;
-  --shadow:0 4px 24px rgba(0,87,255,.12);
+  --navy:#0f172a; --navy-mid:#1e293b; --blue:#2563eb; --blue-dark:#1d4ed8; --blue-light:#eff6ff;
+  --text:#0f172a; --gray:#64748b; --light:#f8fafc; --border:#e2e8f0;
+  --green:#16a34a; --green-light:#f0fdf4; --amber:#d97706; --amber-light:#fffbeb;
+  --red:#dc2626; --shadow-sm:0 1px 3px rgba(0,0,0,.08); --shadow-md:0 4px 16px rgba(0,0,0,.1);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.12); --radius:12px; --radius-sm:8px; --radius-lg:16px;
 }
-body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:#f7f8fc; color:var(--text); }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif; background:var(--light); color:var(--text); line-height:1.5; }
 
-nav { background:var(--blue); padding:0 32px; display:flex; align-items:center; height:60px; position:sticky; top:0; z-index:100; box-shadow:0 2px 12px rgba(0,87,255,.3); }
-.logo { color:#fff; font-size:22px; font-weight:800; letter-spacing:-.5px; }
+/* ── NAV ── */
+nav {
+  background:var(--navy); height:56px; padding:0 32px;
+  display:flex; align-items:center; position:sticky; top:0; z-index:100;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.logo { color:#fff; font-size:20px; font-weight:800; letter-spacing:-.5px; display:flex; align-items:center; gap:8px; }
+.logo-icon { width:28px; height:28px; background:var(--blue); border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:14px; }
 .logo span { color:#93c5fd; }
 
-.hero { background:linear-gradient(135deg,#0057FF 0%,#0ea5e9 100%); padding:48px 32px 96px; text-align:center; }
-.hero h1 { color:#fff; font-size:34px; font-weight:800; margin-bottom:8px; }
-.hero p { color:#bfdbfe; font-size:15px; }
+/* ── HERO ── */
+.hero {
+  background:linear-gradient(160deg, var(--navy) 0%, #1e3a5f 60%, #1e40af 100%);
+  padding:56px 32px 100px; text-align:center;
+}
+.hero h1 { color:#fff; font-size:36px; font-weight:800; letter-spacing:-.5px; margin-bottom:10px; }
+.hero p { color:#94a3b8; font-size:15px; font-weight:400; }
 
-/* SEARCH CARD */
-.search-wrap { max-width:920px; margin:-60px auto 28px; padding:0 16px; position:relative; z-index:10; }
-.search-card { background:#fff; border-radius:20px; box-shadow:0 8px 40px rgba(0,87,255,.15); overflow:visible; }
+/* ── SEARCH WRAP ── */
+.search-wrap { max-width:900px; margin:-68px auto 28px; padding:0 20px; position:relative; z-index:10; }
+.search-card {
+  background:#fff; border-radius:20px; overflow:visible;
+  box-shadow:0 8px 40px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.08);
+}
 
-.trip-tabs { display:flex; border-bottom:1px solid var(--border); }
-.trip-tabs button { flex:1; padding:15px; border:none; background:none; font-size:14px; font-weight:600; color:var(--gray); cursor:pointer; border-bottom:3px solid transparent; transition:.2s; }
+/* ── TRIP TABS ── */
+.trip-tabs { display:flex; padding:0 24px; border-bottom:1px solid var(--border); gap:4px; }
+.trip-tabs button {
+  padding:16px 18px 14px; border:none; background:none; font-size:14px; font-weight:600;
+  color:var(--gray); cursor:pointer; border-bottom:2px solid transparent;
+  transition:all .18s; margin-bottom:-1px;
+}
+.trip-tabs button:hover { color:var(--text); }
 .trip-tabs button.active { color:var(--blue); border-bottom-color:var(--blue); }
 
-.search-body { padding:22px 24px; display:flex; flex-direction:column; gap:14px; }
+/* ── SEARCH BODY ── */
+.search-body { padding:24px; display:flex; flex-direction:column; gap:16px; }
 
-/* FIELDS */
-.fields-row { display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; }
+/* ── FIELDS ── */
+.fields-row { display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; }
 .field { flex:1; min-width:160px; position:relative; }
-.field label { font-size:11px; font-weight:700; color:var(--gray); text-transform:uppercase; letter-spacing:.5px; display:block; margin-bottom:5px; }
+.field label {
+  font-size:11px; font-weight:700; color:var(--gray); text-transform:uppercase;
+  letter-spacing:.6px; display:block; margin-bottom:6px;
+}
 .field input, .field select {
-  width:100%; padding:13px 38px 13px 14px; border:2px solid var(--border); border-radius:12px;
-  font-size:15px; color:var(--text); outline:none; transition:.2s; background:#fff; cursor:pointer;
+  width:100%; padding:12px 40px 12px 14px; border:1.5px solid var(--border); border-radius:var(--radius);
+  font-size:15px; color:var(--text); outline:none; transition:border-color .18s, background .18s;
+  background:#fff; cursor:pointer; font-family:inherit;
 }
-.field input:focus, .field select:focus { border-color:var(--blue); background:var(--sky); }
-.field input.filled { border-color:#c7d7ff; background:#f0f5ff; }
-.fi { position:absolute; right:12px; bottom:13px; font-size:17px; pointer-events:none; }
+.field input:focus, .field select:focus { border-color:var(--blue); background:var(--blue-light); }
+.field input.filled { border-color:#bfdbfe; background:#f0f7ff; }
+.fi {
+  position:absolute; right:12px; bottom:12px; font-size:16px;
+  pointer-events:none; opacity:.55; line-height:1;
+}
 
-/* SWAP */
+/* ── SWAP BTN ── */
 .swap-btn {
-  width:40px; height:40px; border-radius:50%; background:var(--blue); border:none;
-  cursor:pointer; color:#fff; font-size:19px; display:flex; align-items:center; justify-content:center;
-  flex-shrink:0; margin-top:22px; transition:.3s;
+  width:38px; height:38px; border-radius:50%; background:var(--blue-light); border:1.5px solid #bfdbfe;
+  cursor:pointer; color:var(--blue); font-size:18px; display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; margin-top:26px; transition:all .2s; font-weight:700;
 }
-.swap-btn:hover { background:var(--blue-dark); transform:rotate(180deg); }
+.swap-btn:hover { background:var(--blue); color:#fff; border-color:var(--blue); transform:rotate(180deg); }
 
-/* PAX ROW */
-.pax-row { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
-.pax-box { display:flex; align-items:center; gap:6px; background:var(--light); border-radius:10px; padding:8px 12px; }
-.pax-box label { font-size:13px; color:var(--gray); font-weight:600; }
-.pax-btn { width:28px; height:28px; border-radius:6px; border:1.5px solid var(--border); background:#fff; cursor:pointer; font-size:15px; color:var(--blue); font-weight:700; display:flex; align-items:center; justify-content:center; }
+/* ── PAX ROW ── */
+.pax-row { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; }
+.pax-box {
+  display:flex; align-items:center; gap:8px; background:var(--light);
+  border-radius:var(--radius); padding:8px 14px; border:1.5px solid var(--border);
+}
+.pax-box label { font-size:13px; color:var(--gray); font-weight:500; white-space:nowrap; }
+.pax-btn {
+  width:26px; height:26px; border-radius:6px; border:1.5px solid var(--border);
+  background:#fff; cursor:pointer; font-size:14px; color:var(--blue); font-weight:700;
+  display:flex; align-items:center; justify-content:center; transition:.15s;
+}
+.pax-btn:hover { background:var(--blue); color:#fff; border-color:var(--blue); }
 .pax-val { font-size:15px; font-weight:700; min-width:18px; text-align:center; }
 
-/* AUTOCOMPLETE */
+/* ── AUTOCOMPLETE ── */
 .ac-list {
   position:absolute; top:calc(100% + 6px); left:0; right:0; background:#fff;
-  border:1px solid var(--border); border-radius:14px; box-shadow:0 8px 28px rgba(0,0,0,.13);
-  z-index:300; max-height:260px; overflow-y:auto;
+  border:1.5px solid var(--border); border-radius:var(--radius);
+  box-shadow:var(--shadow-lg); z-index:300; max-height:260px; overflow-y:auto;
 }
-.ac-list li { list-style:none; padding:11px 14px; cursor:pointer; font-size:14px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border); }
+.ac-list li {
+  list-style:none; padding:10px 14px; cursor:pointer; font-size:14px;
+  display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border);
+  transition:background .12s;
+}
 .ac-list li:last-child { border:none; }
-.ac-list li:hover, .ac-list li.hovered { background:var(--sky); }
+.ac-list li:hover, .ac-list li.hovered { background:var(--blue-light); }
 .ac-section { font-size:10px; font-weight:700; color:var(--gray); padding:8px 14px 4px; text-transform:uppercase; letter-spacing:.5px; }
-.iata { background:var(--blue); color:#fff; font-size:11px; font-weight:700; padding:3px 7px; border-radius:6px; min-width:38px; text-align:center; flex-shrink:0; }
-.iata.recent { background:#6b7280; }
+.iata {
+  background:var(--blue); color:#fff; font-size:11px; font-weight:700;
+  padding:3px 8px; border-radius:6px; min-width:38px; text-align:center; flex-shrink:0;
+}
+.iata.recent { background:var(--gray); }
 
-/* POPULAR DESTINATIONS */
+/* ── POPULAR DESTINATIONS ── */
 .popular-section { margin-top:4px; }
-.route-category { margin-bottom:12px; }
-.route-cat-label { font-size:11px; font-weight:700; color:var(--gray); text-transform:uppercase; letter-spacing:.5px; margin-bottom:7px; }
+.route-category { margin-bottom:14px; }
+.route-cat-label {
+  font-size:10px; font-weight:700; color:var(--gray); text-transform:uppercase;
+  letter-spacing:.8px; margin-bottom:8px; padding-left:2px;
+}
 .route-cat-items { display:flex; gap:6px; flex-wrap:wrap; }
 .dest-btn {
-  display:flex; align-items:center; gap:5px; padding:7px 12px;
+  display:flex; align-items:center; gap:5px; padding:6px 13px;
   background:#fff; border:1.5px solid var(--border); border-radius:20px;
-  cursor:pointer; font-size:13px; font-weight:600; color:var(--text); transition:.2s;
+  cursor:pointer; font-size:13px; font-weight:500; color:var(--text); transition:.18s;
 }
-.dest-btn:hover { border-color:var(--blue); color:var(--blue); background:var(--sky); }
-.dest-btn .flag { font-size:14px; }
+.dest-btn:hover { border-color:var(--blue); color:var(--blue); background:var(--blue-light); }
+.dest-btn .flag { font-size:13px; }
 
-/* RECENT SEARCHES */
-.recent-section { margin-top:2px; }
-.recent-label { font-size:12px; font-weight:700; color:var(--gray); margin-bottom:8px; display:flex; justify-content:space-between; }
-.recent-label button { background:none; border:none; color:var(--gray); font-size:11px; cursor:pointer; }
+/* ── RECENT SEARCHES ── */
+.recent-section { margin-top:4px; }
+.recent-label {
+  font-size:12px; font-weight:600; color:var(--gray); margin-bottom:8px;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.recent-label button { background:none; border:none; color:var(--gray); font-size:11px; cursor:pointer; transition:.15s; }
 .recent-label button:hover { color:var(--red); }
 .recent-list { display:flex; flex-direction:column; gap:6px; }
 .recent-item {
   display:flex; align-items:center; justify-content:space-between;
-  padding:10px 14px; background:var(--light); border-radius:10px;
-  cursor:pointer; transition:.2s; font-size:13px;
+  padding:10px 14px; background:var(--light); border-radius:var(--radius);
+  cursor:pointer; transition:.18s; font-size:13px; border:1.5px solid transparent;
 }
-.recent-item:hover { background:var(--sky); }
-.recent-route { font-weight:700; }
+.recent-item:hover { background:var(--blue-light); border-color:#bfdbfe; }
+.recent-route { font-weight:600; }
 .recent-meta { color:var(--gray); font-size:12px; }
 
-/* SEARCH BTN */
+/* ── SEARCH BTN ── */
 .search-btn {
-  width:100%; padding:15px; background:var(--blue); color:#fff; border:none; border-radius:14px;
-  font-size:17px; font-weight:700; cursor:pointer; transition:.2s;
-  display:flex; align-items:center; justify-content:center; gap:8px;
+  width:100%; padding:15px; background:var(--blue); color:#fff; border:none;
+  border-radius:var(--radius); font-size:16px; font-weight:700; cursor:pointer;
+  transition:all .18s; display:flex; align-items:center; justify-content:center; gap:8px;
+  letter-spacing:-.2px;
 }
-.search-btn:hover { background:var(--blue-dark); transform:translateY(-2px); box-shadow:0 4px 16px rgba(0,87,255,.3); }
-.search-btn:disabled { opacity:.6; cursor:not-allowed; transform:none; box-shadow:none; }
+.search-btn:hover { background:var(--blue-dark); transform:translateY(-1px); box-shadow:0 4px 16px rgba(37,99,235,.35); }
+.search-btn:disabled { opacity:.55; cursor:not-allowed; transform:none; box-shadow:none; }
 
-/* MULTI CITY */
-.multi-leg { display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end; background:var(--sky); padding:14px; border-radius:12px; margin-bottom:10px; }
-.leg-num { font-size:12px; font-weight:700; color:var(--gray); min-width:18px; }
-.add-leg-btn { padding:10px 16px; background:#fff; border:2px dashed var(--blue); color:var(--blue); border-radius:10px; cursor:pointer; font-size:14px; font-weight:600; }
-.remove-leg-btn { padding:8px 10px; background:#fee2e2; color:var(--red); border:none; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; white-space:nowrap; }
+/* ── MULTI CITY ── */
+.multi-leg {
+  display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;
+  background:var(--light); padding:16px; border-radius:var(--radius);
+  margin-bottom:10px; border:1.5px solid var(--border);
+}
+.leg-num { font-size:11px; font-weight:700; color:var(--gray); min-width:18px; padding-top:28px; }
+.add-leg-btn {
+  padding:11px 18px; background:#fff; border:1.5px dashed var(--blue);
+  color:var(--blue); border-radius:var(--radius); cursor:pointer; font-size:14px; font-weight:600;
+  transition:.18s;
+}
+.add-leg-btn:hover { background:var(--blue-light); }
+.remove-leg-btn {
+  padding:8px 12px; background:#fef2f2; color:var(--red); border:1.5px solid #fecaca;
+  border-radius:var(--radius-sm); cursor:pointer; font-size:13px; font-weight:600; white-space:nowrap;
+  margin-top:26px; transition:.15s;
+}
+.remove-leg-btn:hover { background:#fee2e2; }
 
-/* LOADING */
-.loading { text-align:center; padding:60px; display:none; }
-.spinner { width:44px; height:44px; border:4px solid var(--border); border-top-color:var(--blue); border-radius:50%; animation:spin .8s linear infinite; margin:0 auto 16px; }
+/* ── CAL TOGGLE ── */
+.cal-toggle-btn {
+  width:100%; padding:11px 16px; background:var(--light); color:var(--gray);
+  border:1.5px solid var(--border); border-radius:var(--radius); font-size:13px; font-weight:600;
+  cursor:pointer; display:flex; align-items:center; justify-content:center; gap:7px;
+  transition:.18s; margin-bottom:4px;
+}
+.cal-toggle-btn:hover { border-color:var(--blue); color:var(--blue); background:var(--blue-light); }
+.cal-toggle-btn.active { background:var(--blue-light); border-color:var(--blue); color:var(--blue); }
+.cal-toggle-btn::before { content:''; display:inline-block; width:14px; height:14px; border:1.5px solid currentColor; border-radius:3px; }
+
+/* ── PRICE CALENDAR ── */
+.price-cal-wrap { border:1.5px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; display:none; }
+.price-cal-wrap.open { display:block; }
+.price-cal-header {
+  background:var(--navy); padding:14px 18px;
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;
+}
+.price-cal-header h4 { font-size:13px; font-weight:600; color:#cbd5e1; }
+.cal-month-nav { display:flex; align-items:center; gap:8px; }
+.cal-nav-btn {
+  background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.15); color:#fff;
+  border-radius:6px; width:28px; height:28px; cursor:pointer; font-weight:700; font-size:14px;
+  transition:.15s;
+}
+.cal-nav-btn:hover { background:rgba(255,255,255,.2); }
+.cal-month-label { font-size:13px; font-weight:700; color:#fff; min-width:80px; text-align:center; }
+.price-cal-body { padding:12px 14px 14px; background:#fff; }
+.price-cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+.cal-day-label { text-align:center; font-size:10px; font-weight:700; color:var(--gray); padding:5px 2px; }
+.cal-cell {
+  text-align:center; padding:5px 2px; border-radius:8px; border:1.5px solid transparent;
+  transition:.12s; min-height:46px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+}
+.cal-cell:not(.empty):not(.no-price):hover { border-color:var(--blue); cursor:pointer; }
+.cal-cell .cal-date { font-size:12px; font-weight:700; }
+.cal-cell .cal-price { font-size:9px; font-weight:600; margin-top:2px; white-space:nowrap; }
+.cal-cell.empty { cursor:default; }
+.cal-cell.has-price { background:var(--blue-light); }
+.cal-cell.has-price .cal-price { color:var(--blue); }
+.cal-cell.cheap { background:#fef9c3; }
+.cal-cell.cheap .cal-price { color:var(--amber); }
+.cal-cell.cheapest { background:var(--green-light); border-color:#86efac !important; }
+.cal-cell.cheapest .cal-price { color:var(--green); font-weight:800; }
+.cal-cell.no-price { cursor:default; opacity:.38; }
+.cal-cell.selected { background:var(--blue) !important; border-color:var(--blue-dark) !important; }
+.cal-cell.selected .cal-date, .cal-cell.selected .cal-price { color:#fff !important; }
+.price-cal-loading { text-align:center; padding:28px; color:var(--gray); font-size:13px; }
+.cal-legend { display:flex; gap:14px; margin-top:10px; flex-wrap:wrap; }
+.cal-legend-item { display:flex; align-items:center; gap:5px; font-size:10px; color:var(--gray); }
+.cal-legend-dot { width:10px; height:10px; border-radius:3px; }
+
+/* ── LOADING ── */
+.loading { text-align:center; padding:64px 20px; display:none; }
+.spinner {
+  width:40px; height:40px; border:3px solid var(--border);
+  border-top-color:var(--blue); border-radius:50%;
+  animation:spin .75s linear infinite; margin:0 auto 16px;
+}
 @keyframes spin { to { transform:rotate(360deg); } }
+.loading p { color:var(--gray); font-size:14px; }
 
-/* RESULTS */
-.results-wrap { max-width:920px; margin:0 auto 32px; padding:0 16px; }
-.results-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:8px; }
-.results-count { font-size:15px; color:var(--gray); }
-.results-count strong { color:var(--text); font-size:18px; }
-.source-badges { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px; }
-.src-badge { font-size:11px; font-weight:700; padding:3px 9px; border-radius:10px; }
-.src-amadeus { background:#e0e7ff; color:#3730a3; }
+/* ── INFO BANNERS ── */
+.tip-banner { max-width:900px; margin:0 auto 12px; padding:0 20px; }
+.tip-inner {
+  background:var(--amber-light); border:1.5px solid #fde68a; border-radius:var(--radius);
+  padding:12px 18px; display:flex; align-items:center; gap:10px; font-size:13px; color:#92400e; flex-wrap:wrap;
+}
+.tip-inner strong { font-weight:700; }
+.tip-close { margin-left:auto; background:none; border:none; font-size:16px; cursor:pointer; color:#92400e; flex-shrink:0; opacity:.6; }
+.tip-close:hover { opacity:1; }
+
+.airlines-banner { max-width:900px; margin:0 auto 20px; padding:0 20px; }
+.airlines-inner {
+  background:#fff; border-radius:var(--radius); padding:14px 18px;
+  border:1.5px solid var(--border); display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  box-shadow:var(--shadow-sm);
+}
+.airlines-label { font-size:11px; font-weight:700; color:var(--gray); white-space:nowrap; text-transform:uppercase; letter-spacing:.5px; }
+.airline-tag {
+  font-size:12px; padding:3px 10px; background:var(--light);
+  border-radius:16px; color:var(--text); font-weight:500; border:1px solid var(--border);
+}
+
+/* ── RESULTS ── */
+.results-wrap { max-width:900px; margin:0 auto 32px; padding:0 20px; }
+.results-header {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:12px; flex-wrap:wrap; gap:8px;
+}
+.results-count { font-size:14px; color:var(--gray); }
+.results-count strong { color:var(--text); font-size:18px; font-weight:800; }
+.source-badges { display:flex; gap:6px; flex-wrap:wrap; margin-top:4px; }
+.src-badge { font-size:11px; font-weight:600; padding:3px 9px; border-radius:10px; }
+.src-amadeus { background:#ede9fe; color:#6d28d9; }
 .src-skyscanner { background:#dbeafe; color:#1d4ed8; }
 .src-aviasales { background:#dcfce7; color:#15803d; }
 
-/* FILTERS BAR */
-.filters-bar { background:#fff; border-radius:14px; border:1px solid var(--border); padding:14px 18px; margin-bottom:14px; display:none; flex-wrap:wrap; gap:16px; }
-.filters-bar.open { display:flex; }
-.filter-group { display:flex; flex-direction:column; gap:6px; min-width:160px; }
-.filter-group label { font-size:11px; font-weight:700; color:var(--gray); text-transform:uppercase; letter-spacing:.4px; }
-.filter-group select, .filter-group input[type=range] { border:1.5px solid var(--border); border-radius:8px; padding:7px 10px; font-size:13px; outline:none; cursor:pointer; }
-.filter-group select:focus { border-color:var(--blue); }
-.filter-chips { display:flex; gap:6px; flex-wrap:wrap; }
-.fchip { padding:6px 12px; border-radius:16px; border:1.5px solid var(--border); background:#fff; font-size:12px; font-weight:600; color:var(--gray); cursor:pointer; transition:.2s; }
-.fchip.on { border-color:var(--blue); color:var(--blue); background:var(--sky); }
-.range-val { font-size:12px; color:var(--blue); font-weight:700; }
-
+/* ── TOOLBAR ── */
 .toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
-.sort-select { padding:8px 12px; border:1.5px solid var(--border); border-radius:10px; font-size:13px; font-weight:600; outline:none; cursor:pointer; background:#fff; }
-.filter-toggle-btn { padding:8px 14px; border-radius:10px; border:1.5px solid var(--border); background:#fff; font-size:13px; font-weight:600; color:var(--gray); cursor:pointer; display:flex; align-items:center; gap:5px; }
-.filter-toggle-btn.active { border-color:var(--blue); color:var(--blue); background:var(--sky); }
-.filter-reset { padding:8px 12px; border-radius:10px; border:none; background:#fee2e2; color:var(--red); font-size:12px; font-weight:600; cursor:pointer; display:none; }
+.sort-select {
+  padding:8px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm);
+  font-size:13px; font-weight:600; outline:none; cursor:pointer; background:#fff;
+  color:var(--text); transition:border-color .15s; font-family:inherit;
+}
+.sort-select:focus { border-color:var(--blue); }
+.filter-toggle-btn {
+  padding:8px 14px; border-radius:var(--radius-sm); border:1.5px solid var(--border);
+  background:#fff; font-size:13px; font-weight:600; color:var(--gray); cursor:pointer;
+  display:flex; align-items:center; gap:5px; transition:.15s;
+}
+.filter-toggle-btn:hover { border-color:var(--blue); color:var(--blue); }
+.filter-toggle-btn.active { border-color:var(--blue); color:var(--blue); background:var(--blue-light); }
+.share-btn {
+  padding:8px 14px; border-radius:var(--radius-sm); border:1.5px solid var(--border);
+  background:#fff; font-size:13px; font-weight:600; color:var(--gray); cursor:pointer;
+  display:flex; align-items:center; gap:5px; transition:.15s;
+}
+.share-btn:hover { border-color:var(--blue); color:var(--blue); }
+.filter-reset {
+  padding:8px 12px; border-radius:var(--radius-sm); border:none;
+  background:#fef2f2; color:var(--red); font-size:12px; font-weight:600;
+  cursor:pointer; display:none; transition:.15s;
+}
+.filter-reset:hover { background:#fee2e2; }
 .filter-reset.show { display:block; }
 
-.flight-card { background:#fff; border-radius:16px; margin-bottom:10px; box-shadow:0 2px 10px rgba(0,0,0,.06); border:1px solid var(--border); overflow:hidden; transition:.2s; }
-.flight-card:hover { box-shadow:var(--shadow); transform:translateY(-2px); }
-.card-main { display:flex; align-items:center; padding:18px 22px; gap:18px; flex-wrap:wrap; }
+/* ── FILTERS BAR ── */
+.filters-bar {
+  background:#fff; border-radius:var(--radius); border:1.5px solid var(--border);
+  padding:16px 18px; margin-bottom:14px; display:none; flex-wrap:wrap; gap:18px;
+  box-shadow:var(--shadow-sm);
+}
+.filters-bar.open { display:flex; }
+.filter-group { display:flex; flex-direction:column; gap:7px; min-width:160px; }
+.filter-group label { font-size:11px; font-weight:700; color:var(--gray); text-transform:uppercase; letter-spacing:.4px; }
+.filter-chips { display:flex; gap:6px; flex-wrap:wrap; }
+.fchip {
+  padding:5px 12px; border-radius:16px; border:1.5px solid var(--border);
+  background:#fff; font-size:12px; font-weight:600; color:var(--gray);
+  cursor:pointer; transition:.15s;
+}
+.fchip:hover { border-color:var(--blue); color:var(--blue); }
+.fchip.on { border-color:var(--blue); color:var(--blue); background:var(--blue-light); }
 
-.airline-badge { width:46px; height:46px; border-radius:12px; background:var(--sky); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:var(--blue); flex-shrink:0; border:1.5px solid var(--border); }
+/* ── FLIGHT CARD ── */
+.flight-card {
+  background:#fff; border-radius:var(--radius-lg); margin-bottom:10px;
+  box-shadow:var(--shadow-sm); border:1.5px solid var(--border);
+  overflow:hidden; transition:box-shadow .18s, transform .18s;
+}
+.flight-card:hover { box-shadow:var(--shadow-md); transform:translateY(-2px); }
+.card-main { display:flex; align-items:center; padding:20px 22px; gap:18px; flex-wrap:wrap; }
+
+.airline-badge {
+  width:48px; height:48px; border-radius:12px; background:var(--navy);
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:800; color:#fff; flex-shrink:0; letter-spacing:-.5px;
+}
 .route-block { flex:1; min-width:200px; }
-.route-row { display:flex; align-items:center; gap:10px; }
+.route-row { display:flex; align-items:center; gap:12px; }
 .rt { text-align:center; }
-.rt .t { font-size:22px; font-weight:800; line-height:1; }
-.rt .ap { font-size:11px; color:var(--gray); margin-top:3px; }
+.rt .t { font-size:24px; font-weight:800; line-height:1; letter-spacing:-.5px; }
+.rt .ap { font-size:11px; color:var(--gray); margin-top:4px; font-weight:500; }
 .rt-mid { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; }
-.rt-dur { font-size:12px; color:var(--gray); }
-.rt-bar { width:100%; height:2px; background:linear-gradient(90deg,var(--blue),#0ea5e9); border-radius:2px; position:relative; margin:2px 0; }
-.rt-bar::before,.rt-bar::after { content:''; position:absolute; top:50%; transform:translateY(-50%); width:6px; height:6px; background:var(--blue); border-radius:50%; }
-.rt-bar::before { left:-3px; } .rt-bar::after { right:-3px; }
-.stop-pill { font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px; }
-.direct { background:#dcfce7; color:#16a34a; }
+.rt-dur { font-size:11px; color:var(--gray); font-weight:500; }
+.rt-bar {
+  width:100%; height:1.5px; background:var(--border); border-radius:2px;
+  position:relative; margin:3px 0;
+}
+.rt-bar::before, .rt-bar::after {
+  content:''; position:absolute; top:50%; transform:translateY(-50%);
+  width:5px; height:5px; background:var(--blue); border-radius:50%;
+}
+.rt-bar::before { left:-2px; }
+.rt-bar::after { right:-2px; }
+.stop-pill { font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; white-space:nowrap; }
+.direct { background:#dcfce7; color:#15803d; }
 .via { background:#fef9c3; color:#b45309; }
-.return-sep { height:1px; background:linear-gradient(90deg,transparent,var(--border),transparent); margin:8px 0; }
+.return-sep { height:1px; background:var(--border); margin:10px 0; }
 
-.price-col { text-align:right; flex-shrink:0; min-width:110px; }
-.price-big { font-size:26px; font-weight:800; color:var(--blue); line-height:1; }
-.price-sub { font-size:11px; color:var(--gray); margin-top:3px; }
+.price-col { text-align:right; flex-shrink:0; min-width:120px; }
+.price-big { font-size:28px; font-weight:800; color:var(--navy); line-height:1; letter-spacing:-.5px; }
+.price-sub { font-size:11px; color:var(--gray); margin-top:4px; font-weight:400; }
+.price-meta { margin-top:6px; display:flex; flex-wrap:wrap; gap:4px; justify-content:flex-end; }
+
 .card-btns { display:flex; flex-direction:column; gap:6px; flex-shrink:0; }
-.fav-btn { background:none; border:1.5px solid var(--border); border-radius:8px; padding:6px 10px; font-size:13px; cursor:pointer; color:var(--gray); transition:.2s; }
-.fav-btn:hover { border-color:#facc15; color:#ca8a04; }
-.detail-btn { background:none; border:none; color:var(--gray); font-size:12px; cursor:pointer; padding:4px; }
+.fav-btn {
+  background:none; border:1.5px solid var(--border); border-radius:var(--radius-sm);
+  padding:7px 10px; font-size:13px; cursor:pointer; color:var(--gray);
+  transition:.15s; white-space:nowrap;
+}
+.fav-btn:hover { border-color:#fbbf24; color:#d97706; background:#fffbeb; }
+.detail-btn {
+  background:none; border:none; color:var(--gray); font-size:12px;
+  cursor:pointer; padding:4px; font-weight:500; transition:.15s;
+}
 .detail-btn:hover { color:var(--blue); }
 
-/* PRICE COMPARE TABLE */
-.price-compare { border-top:1px solid var(--border); padding:14px 22px; background:var(--light); }
-.price-compare-title { font-size:11px; font-weight:700; color:var(--gray); text-transform:uppercase; letter-spacing:.5px; margin-bottom:10px; }
-.price-table { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:8px; }
-.price-cell { background:#fff; border-radius:10px; border:1.5px solid var(--border); padding:10px 12px; display:flex; flex-direction:column; gap:4px; text-decoration:none; transition:.2s; }
-.price-cell:hover { border-color:var(--blue); transform:translateY(-1px); box-shadow:0 3px 10px rgba(0,87,255,.1); }
-.price-cell .site-name { font-size:11px; font-weight:700; color:var(--gray); }
-.price-cell .site-price { font-size:16px; font-weight:800; color:var(--blue); }
-.price-cell .site-price.check { font-size:12px; color:var(--gray); font-weight:600; }
-.price-cell .site-tag { font-size:10px; padding:2px 6px; border-radius:6px; width:fit-content; }
-.tag-api { background:#dcfce7; color:#16a34a; }
-.tag-link { background:#f3f4f6; color:var(--gray); }
-.booking-links { display:flex; gap:6px; flex-wrap:wrap; padding:0 22px 16px; }
-.blink { padding:7px 14px; border-radius:8px; font-size:12px; font-weight:700; text-decoration:none; transition:.2s; white-space:nowrap; }
-.blink:hover { filter:brightness(1.1); transform:translateY(-1px); }
-.blink.naver     { background:#03c75a; color:#fff; }
-.blink.skyscanner{ background:#0770e3; color:#fff; }
-.blink.google    { background:#4285f4; color:#fff; }
-.blink.kayak     { background:#ff690f; color:#fff; }
-.blink.expedia   { background:#FFC72C; color:#00355F; }
-.blink.trip      { background:#3093E5; color:#fff; }
-.blink.interpark { background:#e4002b; color:#fff; }
-.blink.hana      { background:#0050a0; color:#fff; }
-.blink.modu      { background:#ff6600; color:#fff; }
-.blink.momondo   { background:#6c3094; color:#fff; }
+/* ── EARLY BADGE ── */
+.early-badge {
+  font-size:10px; font-weight:600; background:#ede9fe; color:#7c3aed;
+  padding:2px 7px; border-radius:6px;
+}
 
-.seg-panel { background:var(--light); border-top:1px solid var(--border); padding:14px 22px; display:none; }
+/* ── PRICE COMPARE (ranked list) ── */
+.price-compare { border-top:1px solid var(--border); padding:16px 22px; background:var(--light); }
+.price-compare-title {
+  font-size:11px; font-weight:700; color:var(--gray); text-transform:uppercase;
+  letter-spacing:.6px; margin-bottom:12px;
+}
+.price-rank-list { display:flex; flex-direction:column; gap:6px; }
+.price-rank-row {
+  display:flex; align-items:center; gap:12px; background:#fff;
+  border:1.5px solid var(--border); border-radius:var(--radius);
+  padding:10px 14px; text-decoration:none; color:inherit; transition:.15s;
+}
+.price-rank-row:hover { border-color:var(--blue); box-shadow:var(--shadow-sm); }
+.price-rank-row.best-price { border-color:#86efac; background:var(--green-light); }
+.price-rank-row.no-price-row { opacity:.65; }
+.rank-site { font-size:13px; font-weight:600; color:var(--text); flex:1; }
+.rank-price-val { font-size:16px; font-weight:800; color:var(--navy); margin-left:auto; white-space:nowrap; }
+.rank-price-val.check-price { font-size:12px; font-weight:600; color:var(--blue); }
+.rank-badge {
+  font-size:10px; font-weight:700; padding:2px 8px; border-radius:8px; white-space:nowrap;
+}
+.rank-badge.best { background:#fef9c3; color:#92400e; }
+.rank-badge.live { background:var(--green-light); color:var(--green); }
+.rank-badge.link { background:var(--light); color:var(--gray); border:1px solid var(--border); }
+.rank-book-btn {
+  padding:6px 14px; background:var(--blue); color:#fff; border:none;
+  border-radius:var(--radius-sm); font-size:12px; font-weight:700; cursor:pointer;
+  text-decoration:none; white-space:nowrap; transition:.15s;
+}
+.rank-book-btn:hover { background:var(--blue-dark); }
+.rank-book-btn.secondary {
+  background:none; color:var(--blue); border:1.5px solid var(--blue);
+}
+.rank-book-btn.secondary:hover { background:var(--blue-light); }
+
+/* ── BOOKING LINKS STRIP ── */
+.booking-links { display:flex; gap:6px; flex-wrap:wrap; padding:0 22px 16px; }
+.blink {
+  padding:6px 14px; border-radius:20px; font-size:12px; font-weight:600;
+  text-decoration:none; transition:.15s; white-space:nowrap; border:1.5px solid transparent;
+}
+.blink:hover { filter:brightness(1.08); transform:translateY(-1px); }
+.blink.naver      { background:#03c75a; color:#fff; }
+.blink.skyscanner { background:#0770e3; color:#fff; }
+.blink.google     { background:#4285f4; color:#fff; }
+.blink.kayak      { background:#ff690f; color:#fff; }
+.blink.expedia    { background:#003580; color:#fff; }
+.blink.trip       { background:#3093E5; color:#fff; }
+.blink.interpark  { background:#e4002b; color:#fff; }
+.blink.hana       { background:#0050a0; color:#fff; }
+.blink.modu       { background:#ff6600; color:#fff; }
+.blink.momondo    { background:#6c3094; color:#fff; }
+
+/* ── SEGMENT PANEL ── */
+.seg-panel { background:var(--light); border-top:1px solid var(--border); padding:16px 22px; display:none; }
 .seg-panel.open { display:block; }
 .seg-title { font-size:11px; font-weight:700; color:var(--gray); margin-bottom:8px; text-transform:uppercase; letter-spacing:.5px; }
-.seg-item { display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid var(--border); font-size:13px; flex-wrap:wrap; }
+.seg-item {
+  display:flex; align-items:center; gap:12px; padding:8px 0;
+  border-bottom:1px solid var(--border); font-size:13px; flex-wrap:wrap;
+}
 .seg-item:last-child { border:none; }
 .seg-fn { font-weight:700; color:var(--blue); min-width:60px; }
 .seg-rt { flex:1; }
 .seg-dur { color:var(--gray); font-size:12px; }
 
-/* EMPTY */
-.empty-state { text-align:center; padding:60px 20px; color:var(--gray); }
-.empty-icon { font-size:60px; margin-bottom:16px; }
-.empty-state h3 { font-size:18px; color:var(--text); margin-bottom:8px; }
+/* ── EMPTY STATE ── */
+.empty-state { text-align:center; padding:64px 20px; color:var(--gray); }
+.empty-icon { font-size:48px; margin-bottom:16px; opacity:.4; }
+.empty-state h3 { font-size:18px; color:var(--text); margin-bottom:8px; font-weight:700; }
+.empty-state p { font-size:14px; }
 
-/* BOTTOM */
-.bottom-wrap { max-width:920px; margin:0 auto 60px; padding:0 16px; display:grid; grid-template-columns:1fr 1fr; gap:20px; }
-@media(max-width:600px) { .bottom-wrap { grid-template-columns:1fr; } }
-.panel { background:#fff; border-radius:16px; padding:20px; box-shadow:0 2px 10px rgba(0,0,0,.06); border:1px solid var(--border); }
-.panel h3 { font-size:15px; font-weight:700; margin-bottom:14px; }
-.panel-empty { color:var(--gray); font-size:14px; text-align:center; padding:16px 0; }
-.fav-item,.alert-item { display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--border); font-size:14px; gap:8px; }
-.fav-item:last-child,.alert-item:last-child { border:none; }
-.del-btn { background:none; border:none; color:var(--gray); cursor:pointer; font-size:15px; }
+/* ── BOTTOM PANELS ── */
+.bottom-wrap {
+  max-width:900px; margin:0 auto 60px; padding:0 20px;
+  display:grid; grid-template-columns:1fr 1fr; gap:20px;
+}
+@media(max-width:640px) { .bottom-wrap { grid-template-columns:1fr; } }
+.panel {
+  background:#fff; border-radius:var(--radius-lg); padding:22px;
+  box-shadow:var(--shadow-sm); border:1.5px solid var(--border);
+}
+.panel-header { display:flex; align-items:center; gap:8px; margin-bottom:16px; }
+.panel h3 { font-size:14px; font-weight:700; color:var(--text); }
+.panel-icon { width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:14px; }
+.panel-icon.fav-icon { background:#fffbeb; }
+.panel-icon.alert-icon { background:#f0fdf4; }
+.panel-empty { color:var(--gray); font-size:13px; text-align:center; padding:16px 0; }
+.fav-item, .alert-item {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 0; border-bottom:1px solid var(--border); font-size:13px; gap:8px;
+}
+.fav-item:last-child, .alert-item:last-child { border:none; }
+.fav-route { font-weight:600; }
+.del-btn { background:none; border:none; color:var(--gray); cursor:pointer; font-size:14px; transition:.15s; }
 .del-btn:hover { color:var(--red); }
-.mini-btn { padding:5px 10px; background:var(--sky); color:var(--blue); border:none; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; }
-.alert-form { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
-.alert-form input { padding:10px 12px; border:1.5px solid var(--border); border-radius:10px; font-size:13px; outline:none; }
+.mini-btn {
+  padding:5px 11px; background:var(--blue-light); color:var(--blue);
+  border:none; border-radius:var(--radius-sm); font-size:12px; font-weight:600; cursor:pointer;
+  transition:.15s;
+}
+.mini-btn:hover { background:var(--blue); color:#fff; }
+.alert-form { display:flex; flex-direction:column; gap:8px; margin-top:14px; }
+.alert-form input {
+  padding:10px 13px; border:1.5px solid var(--border); border-radius:var(--radius-sm);
+  font-size:13px; outline:none; font-family:inherit; transition:border-color .15s;
+}
 .alert-form input:focus { border-color:var(--blue); }
-.alert-form button { padding:10px; background:var(--blue); color:#fff; border:none; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; }
+.alert-form button {
+  padding:11px; background:var(--blue); color:#fff; border:none;
+  border-radius:var(--radius-sm); font-size:13px; font-weight:700; cursor:pointer;
+  transition:.15s;
+}
+.alert-form button:hover { background:var(--blue-dark); }
 .alert-price { color:var(--green); font-weight:700; }
 
-/* SUPPORTED AIRLINES INFO */
-.airlines-banner { max-width:920px; margin:0 auto 24px; padding:0 16px; }
-.airlines-inner { background:#fff; border-radius:14px; padding:16px 20px; border:1px solid var(--border); display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-.airlines-label { font-size:12px; font-weight:700; color:var(--gray); white-space:nowrap; }
-.airline-tag { font-size:12px; padding:4px 10px; background:var(--light); border-radius:20px; color:var(--text); font-weight:500; }
-
-/* INCOGNITO TIP */
-.tip-banner { max-width:920px; margin:0 auto 14px; padding:0 16px; }
-.tip-inner { background:#fffbeb; border:1.5px solid #fcd34d; border-radius:14px; padding:12px 18px; display:flex; align-items:center; gap:10px; font-size:13px; color:#92400e; flex-wrap:wrap; }
-.tip-inner strong { font-weight:700; }
-.tip-close { margin-left:auto; background:none; border:none; font-size:16px; cursor:pointer; color:#92400e; flex-shrink:0; }
-
-.toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(60px); background:#1a1a2e; color:#fff; padding:12px 24px; border-radius:12px; font-size:14px; font-weight:600; z-index:9999; transition:.3s; opacity:0; }
+/* ── TOAST ── */
+.toast {
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(60px);
+  background:var(--navy); color:#fff; padding:12px 22px; border-radius:var(--radius);
+  font-size:14px; font-weight:600; z-index:9999; transition:.3s; opacity:0; white-space:nowrap;
+}
 .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
 
-/* SHARE BTN */
-.share-btn { padding:8px 14px; border-radius:10px; border:1.5px solid var(--border); background:#fff; font-size:13px; font-weight:600; color:var(--gray); cursor:pointer; display:flex; align-items:center; gap:5px; }
-.share-btn:hover { border-color:var(--blue); color:var(--blue); }
-
-/* EARLY BIRD */
-.early-badge { font-size:10px; font-weight:700; background:#e0e7ff; color:#3730a3; padding:2px 7px; border-radius:6px; margin-left:6px; }
-
-/* PRICE CALENDAR */
-.cal-toggle-btn {
-  width:100%; padding:10px 16px; background:var(--sky); color:var(--blue);
-  border:1.5px solid var(--border); border-radius:12px; font-size:13px; font-weight:700;
-  cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;
-  transition:.2s; margin-bottom:8px;
-}
-.cal-toggle-btn:hover, .cal-toggle-btn.active { background:#dbeafe; border-color:var(--blue); }
-.price-cal-wrap { border:1.5px solid var(--border); border-radius:14px; overflow:hidden; display:none; margin-bottom:8px; }
-.price-cal-wrap.open { display:block; }
-.price-cal-header { background:var(--sky); padding:12px 16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
-.price-cal-header h4 { font-size:13px; font-weight:700; color:var(--blue); }
-.cal-month-nav { display:flex; align-items:center; gap:8px; }
-.cal-nav-btn { background:#fff; border:1.5px solid var(--blue); color:var(--blue); border-radius:8px; width:28px; height:28px; cursor:pointer; font-weight:700; font-size:14px; }
-.cal-month-label { font-size:13px; font-weight:700; color:var(--text); min-width:80px; text-align:center; }
-.price-cal-body { padding:10px 12px 12px; background:#fff; }
-.price-cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
-.cal-day-label { text-align:center; font-size:10px; font-weight:700; color:var(--gray); padding:4px 2px; }
-.cal-cell { text-align:center; padding:5px 2px; border-radius:8px; border:1.5px solid transparent; transition:.15s; min-height:46px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-.cal-cell:not(.empty):not(.no-price):hover { border-color:var(--blue); cursor:pointer; }
-.cal-cell .cal-date { font-size:12px; font-weight:700; }
-.cal-cell .cal-price { font-size:9px; font-weight:600; margin-top:2px; white-space:nowrap; }
-.cal-cell.empty { cursor:default; }
-.cal-cell.has-price { background:var(--sky); }
-.cal-cell.cheap { background:#fef9c3; }
-.cal-cell.cheap .cal-price { color:#b45309; }
-.cal-cell.cheapest { background:#dcfce7; border-color:#16a34a !important; }
-.cal-cell.cheapest .cal-price { color:#16a34a; font-weight:800; }
-.cal-cell.no-price { cursor:default; opacity:.45; }
-.cal-cell.selected { background:var(--blue) !important; border-color:var(--blue-dark) !important; }
-.cal-cell.selected .cal-date, .cal-cell.selected .cal-price { color:#fff !important; }
-.price-cal-loading { text-align:center; padding:28px; color:var(--gray); font-size:13px; }
-.cal-legend { display:flex; gap:12px; margin-top:8px; flex-wrap:wrap; }
-.cal-legend-item { display:flex; align-items:center; gap:4px; font-size:10px; color:var(--gray); }
-.cal-legend-dot { width:10px; height:10px; border-radius:3px; }
-
+/* ── RESPONSIVE ── */
 @media(max-width:640px) {
   .hero h1 { font-size:26px; }
-  .card-main { flex-direction:column; align-items:flex-start; }
+  .hero { padding:44px 20px 90px; }
+  .card-main { flex-direction:column; align-items:flex-start; gap:12px; }
   .price-col { text-align:left; }
+  .price-meta { justify-content:flex-start; }
+  .search-body { padding:16px; }
+  .trip-tabs { padding:0 16px; }
+  .trip-tabs button { padding:14px 12px; font-size:13px; }
 }
 </style>
 </head>
 <body>
 
-<nav><div class="logo">Fly<span>Low</span> ✈️</div></nav>
+<!-- NAV -->
+<nav>
+  <div class="logo">
+    <div class="logo-icon">✈</div>
+    Fly<span>Low</span>
+  </div>
+</nav>
 
+<!-- HERO -->
 <div class="hero">
   <h1>항공권 최저가 검색</h1>
-  <p>전 세계 항공편 실시간 비교 · 가격 알림 · 즐겨찾기</p>
+  <p>전 세계 항공편 실시간 비교 &middot; 가격 알림 &middot; 즐겨찾기</p>
 </div>
 
+<!-- SEARCH CARD -->
 <div class="search-wrap">
   <div class="search-card">
     <div class="trip-tabs">
@@ -327,47 +555,47 @@ nav { background:var(--blue); padding:0 32px; display:flex; align-items:center; 
             <label>출발지</label>
             <input id="fromInput" type="text" placeholder="서울/인천 (ICN)" autocomplete="off">
             <input type="hidden" id="fromCode">
-            <span class="fi">🛫</span>
+            <span class="fi">&#9992;</span>
             <ul class="ac-list" id="fromList" style="display:none"></ul>
           </div>
-          <button class="swap-btn" onclick="swapAirports()">⇄</button>
+          <button class="swap-btn" onclick="swapAirports()" title="출발/도착 교체">&#8644;</button>
           <div class="field">
             <label>도착지</label>
             <input id="toInput" type="text" placeholder="도시 또는 공항 검색" autocomplete="off">
             <input type="hidden" id="toCode">
-            <span class="fi">🛬</span>
+            <span class="fi">&#8600;</span>
             <ul class="ac-list" id="toList" style="display:none"></ul>
           </div>
           <div class="field" style="min-width:145px">
             <label>출발일</label>
             <input id="departDate" type="date">
-            <span class="fi">📅</span>
+            <span class="fi">&#128197;</span>
           </div>
           <div class="field" id="returnGroup" style="min-width:145px;display:none">
             <label>귀국일</label>
             <input id="returnDate" type="date">
-            <span class="fi">📅</span>
+            <span class="fi">&#128197;</span>
           </div>
         </div>
 
         <div class="pax-row">
           <div class="pax-box">
             <label>성인</label>
-            <button class="pax-btn" onclick="adjPax('adults',-1)">−</button>
+            <button class="pax-btn" onclick="adjPax('adults',-1)">&#8722;</button>
             <span class="pax-val" id="adultsVal">1</span>
-            <button class="pax-btn" onclick="adjPax('adults',1)">+</button>
+            <button class="pax-btn" onclick="adjPax('adults',1)">&#43;</button>
           </div>
           <div class="pax-box">
             <label>아동</label>
-            <button class="pax-btn" onclick="adjPax('children',-1)">−</button>
+            <button class="pax-btn" onclick="adjPax('children',-1)">&#8722;</button>
             <span class="pax-val" id="childrenVal">0</span>
-            <button class="pax-btn" onclick="adjPax('children',1)">+</button>
+            <button class="pax-btn" onclick="adjPax('children',1)">&#43;</button>
           </div>
           <div class="pax-box">
             <label>유아</label>
-            <button class="pax-btn" onclick="adjPax('infants',-1)">−</button>
+            <button class="pax-btn" onclick="adjPax('infants',-1)">&#8722;</button>
             <span class="pax-val" id="infantsVal">0</span>
-            <button class="pax-btn" onclick="adjPax('infants',1)">+</button>
+            <button class="pax-btn" onclick="adjPax('infants',1)">&#43;</button>
           </div>
           <div class="field" style="min-width:160px;flex:none">
             <label>좌석 등급</label>
@@ -382,18 +610,18 @@ nav { background:var(--blue); padding:0 32px; display:flex; align-items:center; 
       </div>
 
       <!-- PRICE CALENDAR -->
-      <button class="cal-toggle-btn" id="calToggleBtn" onclick="togglePriceCal()">📅 날짜별 최저가 보기</button>
+      <button class="cal-toggle-btn" id="calToggleBtn" onclick="togglePriceCal()">날짜별 최저가 보기</button>
       <div class="price-cal-wrap" id="priceCalWrap">
         <div class="price-cal-header">
           <h4 id="calRouteTitle">출발지와 도착지를 선택하면 날짜별 최저가를 확인할 수 있어요</h4>
           <div class="cal-month-nav">
-            <button class="cal-nav-btn" onclick="calChangeMonth(-1)">‹</button>
+            <button class="cal-nav-btn" onclick="calChangeMonth(-1)">&#8249;</button>
             <span class="cal-month-label" id="calMonthLabel">--</span>
-            <button class="cal-nav-btn" onclick="calChangeMonth(1)">›</button>
+            <button class="cal-nav-btn" onclick="calChangeMonth(1)">&#8250;</button>
           </div>
         </div>
         <div class="price-cal-body" id="priceCalBody">
-          <div class="price-cal-loading">출발지와 도착지를 먼저 선택해주세요 ✈️</div>
+          <div class="price-cal-loading">출발지와 도착지를 먼저 선택해주세요</div>
         </div>
       </div>
 
@@ -403,7 +631,7 @@ nav { background:var(--blue); padding:0 32px; display:flex; align-items:center; 
         <button class="add-leg-btn" onclick="addLeg()">+ 구간 추가</button>
       </div>
 
-      <button class="search-btn" id="searchBtn" onclick="doSearch()">✈️&nbsp; 항공권 검색</button>
+      <button class="search-btn" id="searchBtn" onclick="doSearch()">항공권 검색</button>
 
       <!-- POPULAR DESTINATIONS -->
       <div class="popular-section" id="popularSection"></div>
@@ -421,31 +649,29 @@ nav { background:var(--blue); padding:0 32px; display:flex; align-items:center; 
   </div>
 </div>
 
-<!-- INCOGNITO TIP BANNER -->
+<!-- INCOGNITO TIP -->
 <div class="tip-banner" id="tipBanner">
   <div class="tip-inner">
-    <span>🕵️</span>
-    <span><strong>가격이 오르셨나요?</strong> 시크릿/프라이빗 모드로 검색하면 쿠키 추적 없이 더 저렴한 가격을 볼 수 있어요.</span>
+    <strong>가격이 오르셨나요?</strong>
+    <span>시크릿 모드로 검색하면 쿠키 추적 없이 더 저렴한 가격을 볼 수 있어요.</span>
     <span style="color:#b45309;font-size:12px">Chrome: Ctrl+Shift+N &nbsp;|&nbsp; Safari: Cmd+Shift+N</span>
-    <button class="tip-close" onclick="document.getElementById('tipBanner').style.display='none'">✕</button>
+    <button class="tip-close" onclick="document.getElementById('tipBanner').style.display='none'">&#215;</button>
   </div>
 </div>
 
 <!-- SUPPORTED AIRLINES -->
 <div class="airlines-banner">
   <div class="airlines-inner">
-    <span class="airlines-label">검색 가능 항공사</span>
+    <span class="airlines-label">검색 가능</span>
     <span class="airline-tag">대한항공 KE</span>
     <span class="airline-tag">아시아나 OZ</span>
     <span class="airline-tag">제주항공 7C</span>
     <span class="airline-tag">진에어 LJ</span>
     <span class="airline-tag">티웨이 TW</span>
-    <span class="airline-tag">에어서울 RS</span>
     <span class="airline-tag">JAL JL</span>
     <span class="airline-tag">ANA NH</span>
     <span class="airline-tag">싱가포르항공 SQ</span>
     <span class="airline-tag">에미레이트 EK</span>
-    <span class="airline-tag">캐세이퍼시픽 CX</span>
     <span class="airline-tag">전 세계 400+ 항공사</span>
   </div>
 </div>
@@ -454,7 +680,7 @@ nav { background:var(--blue); padding:0 32px; display:flex; align-items:center; 
 <div class="results-wrap">
   <div class="loading" id="loading">
     <div class="spinner"></div>
-    <p style="color:var(--gray);font-size:15px;margin-top:4px">항공편 검색 중...</p>
+    <p>항공편 검색 중...</p>
   </div>
 
   <div id="resultsSection" style="display:none">
@@ -463,22 +689,20 @@ nav { background:var(--blue); padding:0 32px; display:flex; align-items:center; 
         <div class="results-count"><strong id="resultCount">0</strong>개 항공편 찾음</div>
         <div class="source-badges" id="sourceBadges"></div>
       </div>
-      <button class="share-btn" onclick="shareSearch()">🔗 검색 공유</button>
+      <button class="share-btn" onclick="shareSearch()">검색 링크 공유</button>
     </div>
 
-    <!-- 툴바: 정렬 + 필터 -->
     <div class="toolbar">
       <select class="sort-select" id="sortSelect" onchange="applyFilters()">
-        <option value="price">💰 최저가순</option>
-        <option value="depart">🛫 출발시간 빠른순</option>
-        <option value="arrive">🛬 도착시간 빠른순</option>
-        <option value="duration">⏱ 소요시간 짧은순</option>
+        <option value="price">최저가순</option>
+        <option value="depart">출발 빠른순</option>
+        <option value="arrive">도착 빠른순</option>
+        <option value="duration">소요시간 짧은순</option>
       </select>
-      <button class="filter-toggle-btn" id="filterToggleBtn" onclick="toggleFilters()">🔧 필터</button>
+      <button class="filter-toggle-btn" id="filterToggleBtn" onclick="toggleFilters()">필터</button>
       <button class="filter-reset" id="filterResetBtn" onclick="resetFilters()">필터 초기화</button>
     </div>
 
-    <!-- 필터 패널 -->
     <div class="filters-bar" id="filtersBar">
       <div class="filter-group">
         <label>경유</label>
@@ -523,7 +747,7 @@ nav { background:var(--blue); padding:0 32px; display:flex; align-items:center; 
   </div>
 
   <div class="empty-state" id="emptyState" style="display:none">
-    <div class="empty-icon">😢</div>
+    <div class="empty-icon">&#9992;</div>
     <h3 id="emptyTitle">검색 결과가 없습니다</h3>
     <p id="emptyDesc">날짜나 구간을 변경해 다시 시도해보세요</p>
   </div>
@@ -532,11 +756,17 @@ nav { background:var(--blue); padding:0 32px; display:flex; align-items:center; 
 <!-- BOTTOM PANELS -->
 <div class="bottom-wrap">
   <div class="panel">
-    <h3>⭐ 즐겨찾기 노선</h3>
+    <div class="panel-header">
+      <div class="panel-icon fav-icon">&#11088;</div>
+      <h3>즐겨찾기 노선</h3>
+    </div>
     <div id="favList"><div class="panel-empty">저장된 노선 없음</div></div>
   </div>
   <div class="panel">
-    <h3>🔔 가격 알림</h3>
+    <div class="panel-header">
+      <div class="panel-icon alert-icon">&#128276;</div>
+      <h3>가격 알림</h3>
+    </div>
     <div id="alertList"><div class="panel-empty">설정된 알림 없음</div></div>
     <div id="alertFormSection" style="display:none">
       <div class="alert-form">
@@ -689,7 +919,7 @@ function renderRecent() {
   sec.style.display = '';
   document.getElementById('recentList').innerHTML = arr.map((r,i) => `
     <div class="recent-item" onclick="fillRecent(${i})">
-      <span class="recent-route">✈️ ${r.fromName} → ${r.toName}</span>
+      <span class="recent-route">${r.fromName} → ${r.toName}</span>
       <span class="recent-meta">${r.date} · ${r.type === 'roundtrip' ? '왕복' : '편도'}</span>
     </div>`).join('');
 }
@@ -806,7 +1036,7 @@ function renderMulti() {
         <label>날짜</label>
         <input type="date" id="md${i}" value="${l.date}">
       </div>
-      ${multiLegs.length > 2 ? `<button class="remove-leg-btn" onclick="removeLeg(${i})">✕</button>` : ''}
+      ${multiLegs.length > 2 ? `<button class="remove-leg-btn" onclick="removeLeg(${i})">&#215;</button>` : ''}
     </div>`).join('');
 }
 const mT = {};
@@ -1041,51 +1271,33 @@ function buildPriceTable(f) {
     ? `https://www.aviasales.com/search/${fr}${dep8}${to}1?marker=734275`
     : `https://www.aviasales.com/search/${fr}${dep8}1${to}1?marker=734275`;
 
-  // ─── Skyscanner 최저가 셀 ───
-  const skyHtml = skyPrice ? (() => {
-    const isBest = skyPrice === globalMin;
-    return `<a class="price-cell" href="${urls.skyscanner}" target="_blank" style="${isBest?'border-color:#16a34a;background:#f0fdf4':''}">
-      <div style="display:flex;align-items:center;gap:5px">
-        <div class="site-name">스카이스캐너</div>
-        ${isBest?'<span style="font-size:9px;background:#fef9c3;color:#b45309;padding:1px 5px;border-radius:5px;font-weight:700">최저가</span>':''}
-      </div>
-      <div class="site-price" style="${isBest?'color:#16a34a':''}">${fmtPrice(skyMatch.price, skyMatch.currency)}</div>
-      <div class="site-tag tag-api">실시간</div>
-    </a>`;
-  })() : '';
+  // ─── 가격 항목 배열 구성 ───
+  let priceItems = [];
 
-  // ─── Aviasales 최저가 셀 ───
-  const tpHtml = tpPrice ? (() => {
-    const isBest = tpPrice === globalMin;
-    return `<a class="price-cell" href="${tpUrl}" target="_blank" style="${isBest?'border-color:#16a34a;background:#f0fdf4':''}">
-      <div style="display:flex;align-items:center;gap:5px">
-        <div class="site-name">Aviasales</div>
-        ${isBest?'<span style="font-size:9px;background:#fef9c3;color:#b45309;padding:1px 5px;border-radius:5px;font-weight:700">최저가</span>':''}
-      </div>
-      <div class="site-price" style="${isBest?'color:#16a34a':''}">${fmtPrice(String(tpPrice), 'KRW')}</div>
-      <div class="site-tag tag-api">실시간</div>
-    </a>`;
-  })() : '';
-
-  // ─── 에이전트 실제 가격 셀 (Skyscanner pricing_options) ───
-  const agentHtml = agents.map(ag => {
+  if (skyPrice) {
+    priceItems.push({ label:'스카이스캐너', price: skyPrice, url: urls.skyscanner, type:'live' });
+  }
+  if (tpPrice) {
+    priceItems.push({ label:'Aviasales', price: tpPrice, url: tpUrl, type:'live' });
+  }
+  agents.forEach(ag => {
     const mapped = agentMap[ag.name] || { label: ag.name, url: ag.url || urls.skyscanner };
-    const isBest = ag.price === globalMin;
-    return `<a class="price-cell" href="${mapped.url}" target="_blank" style="${isBest?'border-color:#16a34a;background:#f0fdf4':''}">
-      <div style="display:flex;align-items:center;gap:5px">
-        <div class="site-name">${mapped.label}</div>
-        ${isBest?'<span style="font-size:9px;background:#fef9c3;color:#b45309;padding:1px 5px;border-radius:5px;font-weight:700">최저가</span>':''}
-      </div>
-      <div class="site-price" style="${isBest?'color:#16a34a':''}">${fmtPrice(String(ag.price), f.currency)}</div>
-      <div class="site-tag tag-api">실시간</div>
-    </a>`;
-  }).join('');
+    priceItems.push({ label: mapped.label, price: ag.price, url: mapped.url, type:'live' });
+  });
 
-  // ─── 예약 바로가기 (API 가격 없는 사이트) ───
-  const coveredLabels = new Set([
-    ...(skyPrice ? ['스카이스캐너'] : []),
-    ...agents.map(ag => (agentMap[ag.name]?.label || ag.name))
-  ]);
+  // 정렬: 가격 낮은 순
+  priceItems.sort((a, b) => a.price - b.price);
+
+  // 중복 라벨 제거 (최저가 우선 유지)
+  const seen = new Set();
+  priceItems = priceItems.filter(item => {
+    if (seen.has(item.label)) return false;
+    seen.add(item.label);
+    return true;
+  });
+
+  // 가격 없는 정적 사이트
+  const coveredLabels = new Set(priceItems.map(i => i.label));
   const staticSites = [
     {n:'네이버항공',  url:urls.naver},
     {n:'스카이스캐너',url:urls.skyscanner},
@@ -1099,21 +1311,34 @@ function buildPriceTable(f) {
     {n:'모몬도',      url:urls.momondo},
   ].filter(s => !coveredLabels.has(s.n));
 
+  const realCount = priceItems.length;
+  const titleText = `가격 비교 · ${isRT?'왕복':'편도'} ${ad}인${realCount>0?' — 실시간 '+realCount+'개':' — 바로가기'}`;
+
+  // 랭킹 리스트 렌더
+  const rankedHtml = priceItems.map((item, idx) => {
+    const isBest = item.price === globalMin && idx === 0;
+    return `<a class="price-rank-row${isBest?' best-price':''}" href="${item.url}" target="_blank">
+      <span class="rank-site">${item.label}</span>
+      <span class="rank-price-val">${fmtPrice(String(item.price), f.currency)}</span>
+      ${isBest ? '<span class="rank-badge best">최저가</span>' : '<span class="rank-badge live">실시간</span>'}
+      <span class="rank-book-btn">예약</span>
+    </a>`;
+  }).join('');
+
   const staticHtml = staticSites.map(s =>
-    `<a class="price-cell" href="${s.url}" target="_blank">
-      <div class="site-name">${s.n}</div>
-      <div class="site-price" style="font-size:12px;color:var(--blue)">가격 확인 →</div>
-      <div class="site-tag tag-link">바로가기</div>
+    `<a class="price-rank-row no-price-row" href="${s.url}" target="_blank">
+      <span class="rank-site">${s.n}</span>
+      <span class="rank-price-val check-price">가격 확인 →</span>
+      <span class="rank-badge link">바로가기</span>
     </a>`).join('');
 
-  const realCount = (skyPrice ? 1 : 0) + (tpPrice ? 1 : 0) + agents.length;
   const noteHtml = realCount === 0
-    ? `<div style="font-size:11px;color:var(--gray);margin-top:6px">※ 실시간 가격 데이터 없음 — 각 사이트에서 직접 확인하세요</div>`
+    ? `<p style="font-size:11px;color:var(--gray);margin-top:8px">실시간 가격 데이터 없음 — 각 사이트에서 직접 확인하세요</p>`
     : '';
 
   return `<div class="price-compare">
-    <div class="price-compare-title">💰 가격 비교 · ${isRT?'왕복':'편도'} ${ad}인${realCount>0?' — 실시간 가격 '+realCount+'개 확인됨':''}</div>
-    <div class="price-table">${skyHtml}${tpHtml}${agentHtml}${staticHtml}</div>
+    <div class="price-compare-title">${titleText}</div>
+    <div class="price-rank-list">${rankedHtml}${staticHtml}</div>
     ${noteHtml}
   </div>`;
 }
@@ -1207,7 +1432,7 @@ function renderResults(results) {
       : `<span class="stop-pill via">${leg0.stops}회 경유</span>`;
     const depDateStr = (leg0.fromTime||curSearch.departDate||'').slice(0,10);
     const daysLeft = depDateStr ? Math.floor((new Date(depDateStr)-new Date())/86400000) : 0;
-    const earlyBadge = daysLeft >= 60 ? `<span class="early-badge">🐦 얼리버드 ${daysLeft}일 전</span>` : '';
+    const earlyBadge = daysLeft >= 60 ? `<span class="early-badge">얼리버드 ${daysLeft}일 전</span>` : '';
     let returnRow = '';
     if (f.legs[1]) {
       const l1=f.legs[1];
@@ -1221,7 +1446,7 @@ function renderResults(results) {
         </div>`;
     }
     const segsHtml = f.legs.map((lg,li)=>`
-      <div class="seg-title">${li===0?'▶ 가는 편':'◀ 오는 편'}</div>
+      <div class="seg-title">${li===0?'가는 편':'오는 편'}</div>
       ${(lg.segments||[]).map(s=>`
         <div class="seg-item">
           <span class="seg-fn">${s.flightNo||s.carrier}</span>
@@ -1241,12 +1466,12 @@ function renderResults(results) {
         </div>
         <div class="price-col">
           <div class="price-big">${fmtPrice(f.price,f.currency)}</div>
-          <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end">${srcBadge}${earlyBadge}</div>
+          <div class="price-meta">${srcBadge}${earlyBadge}</div>
           <div class="price-sub">1인 기준</div>
         </div>
         <div class="card-btns">
-          <button class="fav-btn" onclick="saveFav(${idx})">⭐</button>
-          <button class="detail-btn" id="dtBtn${idx}" onclick="toggleSeg(${idx})">상세 ▼</button>
+          <button class="fav-btn" onclick="saveFav(${idx})">&#11088;</button>
+          <button class="detail-btn" id="dtBtn${idx}" onclick="toggleSeg(${idx})">상세 &#9660;</button>
         </div>
       </div>
       ${buildPriceTable(f)}
@@ -1269,10 +1494,10 @@ async function loadFavs() {
   if (!data.length) { el.innerHTML = '<div class="panel-empty">저장된 노선 없음</div>'; return; }
   el.innerHTML = data.map(f => `
     <div class="fav-item">
-      <span>✈️ <b>${f.from}</b> → <b>${f.to}</b></span>
+      <span class="fav-route">${f.from} → ${f.to}</span>
       <div style="display:flex;gap:6px;align-items:center">
         <button class="mini-btn" onclick="quickSearch('${f.from}','${f.to}')">검색</button>
-        <button class="del-btn" onclick="delFav('${f.id}')">✕</button>
+        <button class="del-btn" onclick="delFav('${f.id}')">&#215;</button>
       </div>
     </div>`).join('');
 }
@@ -1291,7 +1516,7 @@ async function saveFav(idx) {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ from: leg.from, to: leg.to })
   }).then(r=>r.json());
-  if (res.success) { toast('즐겨찾기에 저장됐어요 ⭐'); loadFavs(); }
+  if (res.success) { toast('즐겨찾기에 저장됐어요'); loadFavs(); }
   else toast(res.error || '이미 저장된 노선입니다');
 }
 async function delFav(id) {
@@ -1307,10 +1532,10 @@ async function loadAlerts() {
   el.innerHTML = data.map(a => `
     <div class="alert-item">
       <div>
-        <div style="font-weight:700">${a.from} → ${a.to} · ${a.departDate}</div>
+        <div style="font-weight:600">${a.from} → ${a.to} · ${a.departDate}</div>
         <div style="font-size:12px;color:var(--gray)">목표가: <span class="alert-price">${parseInt(a.targetPrice).toLocaleString()}원</span></div>
       </div>
-      <button class="del-btn" onclick="delAlert('${a.id}')">✕</button>
+      <button class="del-btn" onclick="delAlert('${a.id}')">&#215;</button>
     </div>`).join('');
 }
 async function saveAlert() {
@@ -1320,7 +1545,7 @@ async function saveAlert() {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ ...curSearch, targetPrice: tp })
   });
-  toast('가격 알림이 설정됐어요 🔔');
+  toast('가격 알림이 설정됐어요');
   document.getElementById('alertTarget').value = '';
   loadAlerts();
 }
@@ -1346,7 +1571,7 @@ function shareSearch() {
   });
   const url = `${location.origin}${location.pathname}?${p}`;
   if (navigator.clipboard) {
-    navigator.clipboard.writeText(url).then(() => toast('검색 링크 복사됨 🔗'));
+    navigator.clipboard.writeText(url).then(() => toast('검색 링크 복사됨'));
   } else {
     prompt('링크를 복사하세요:', url);
   }
@@ -1378,12 +1603,12 @@ function togglePriceCal() {
   calState.open = !calState.open;
   wrap.classList.toggle('open', calState.open);
   btn.classList.toggle('active', calState.open);
-  btn.textContent = calState.open ? '📅 날짜별 최저가 닫기' : '📅 날짜별 최저가 보기';
+  btn.textContent = calState.open ? '날짜별 최저가 닫기' : '날짜별 최저가 보기';
   if (calState.open) {
     const from = document.getElementById('fromCode').value;
     const to   = document.getElementById('toCode').value;
     if (!from || !to) {
-      document.getElementById('priceCalBody').innerHTML = '<div class="price-cal-loading">출발지와 도착지를 먼저 선택해주세요 ✈️</div>';
+      document.getElementById('priceCalBody').innerHTML = '<div class="price-cal-loading">출발지와 도착지를 먼저 선택해주세요</div>';
       return;
     }
     if (!calState.month) {
@@ -1413,7 +1638,7 @@ async function loadPriceCal() {
   const [y, m] = calState.month.split('-').map(Number);
   document.getElementById('calMonthLabel').textContent = `${y}년 ${m}월`;
   document.getElementById('calRouteTitle').textContent = `${from} → ${to}  날짜별 최저가`;
-  document.getElementById('priceCalBody').innerHTML = '<div class="price-cal-loading">⏳ 날짜별 가격 불러오는 중...</div>';
+  document.getElementById('priceCalBody').innerHTML = '<div class="price-cal-loading">날짜별 가격 불러오는 중...</div>';
 
   try {
     const isRT = tripType === 'roundtrip';
@@ -1428,11 +1653,11 @@ async function loadPriceCal() {
       renderPriceCal();
     } else {
       document.getElementById('priceCalBody').innerHTML =
-        '<div class="price-cal-loading">😢 이 달 가격 데이터가 없습니다. 다른 달을 선택해보세요.</div>';
+        '<div class="price-cal-loading">이 달 가격 데이터가 없습니다. 다른 달을 선택해보세요.</div>';
     }
   } catch {
     document.getElementById('priceCalBody').innerHTML =
-      '<div class="price-cal-loading">⚠️ 가격 정보를 불러올 수 없습니다</div>';
+      '<div class="price-cal-loading">가격 정보를 불러올 수 없습니다</div>';
   }
 }
 
@@ -1446,7 +1671,7 @@ function renderPriceCal() {
   const prices = Object.values(priceMap).filter(p => p > 0);
   if (!prices.length) {
     document.getElementById('priceCalBody').innerHTML =
-      '<div class="price-cal-loading">😢 이 달 가격 데이터가 없습니다.</div>';
+      '<div class="price-cal-loading">이 달 가격 데이터가 없습니다.</div>';
     return;
   }
   const minPrice = Math.min(...prices);
@@ -1495,9 +1720,9 @@ function renderPriceCal() {
   }
   html += '</div>';
   html += `<div class="cal-legend">
-    <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#dcfce7;border:1px solid #16a34a"></div>최저가</div>
+    <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#dcfce7;border:1px solid #86efac"></div>최저가</div>
     <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#fef9c3"></div>저렴 (최저가 +20% 이내)</div>
-    <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--sky)"></div>보통</div>
+    <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--blue-light)"></div>보통</div>
   </div>`;
   document.getElementById('priceCalBody').innerHTML = html;
 }
@@ -1508,7 +1733,7 @@ function pickCalDate(ds) {
   d.setDate(d.getDate() + 7);
   document.getElementById('returnDate').value = d.toISOString().slice(0,10);
   renderPriceCal();
-  toast(`${ds} 선택됨 ✅`);
+  toast(`${ds} 선택됨`);
 }
 </script>
 </body>
