@@ -346,6 +346,86 @@ def search_rapidapi(data):
     return parse_rapidapi_results(itineraries)
 
 # ──────────────────────────────────────────────
+# Travelpayouts (Aviasales)
+# ──────────────────────────────────────────────
+def search_travelpayouts(data):
+    token = os.getenv('TRAVELPAYOUTS_TOKEN')
+    if not token:
+        return []
+    fr = data.get('from', '')
+    to = data.get('to', '')
+    depart_date = data.get('departDate', '')
+    trip_type = data.get('tripType', 'oneway')
+    if not fr or not to or not depart_date:
+        return []
+
+    depart_ym = depart_date[:7]
+    params = {
+        'origin': fr, 'destination': to,
+        'depart_date': depart_ym,
+        'currency': 'krw', 'token': token,
+    }
+    if trip_type == 'roundtrip' and data.get('returnDate'):
+        params['return_date'] = data['returnDate'][:7]
+
+    r = requests.get(
+        'https://api.travelpayouts.com/v1/prices/cheap',
+        params=params,
+        headers={'X-Access-Token': token},
+        timeout=15
+    )
+    if r.status_code != 200:
+        return []
+    resp = r.json()
+    if not resp.get('success') or not resp.get('data'):
+        return []
+
+    data_map = resp['data']
+    dest_data = data_map.get(to, data_map.get(to.upper(), {}))
+    if not dest_data and data_map:
+        dest_data = list(data_map.values())[0]
+    if not dest_data:
+        return []
+
+    results = []
+    for transfers_str, info in dest_data.items():
+        price = info.get('price', 0)
+        if not price:
+            continue
+        airline = info.get('airline', '')
+        departure_at = info.get('departure_at', f"{depart_date}T00:00:00")
+        try:
+            transfers = int(transfers_str)
+        except Exception:
+            transfers = info.get('transfers', 0)
+        dur_to = info.get('duration_to') or info.get('duration', 0)
+        legs = [{
+            'from': fr, 'fromTime': departure_at, 'to': to, 'toTime': '',
+            'duration': f"{dur_to//60}시간 {dur_to%60}분" if dur_to else '',
+            'stops': transfers, 'carrier': airline, 'stopCities': [],
+            'segments': [{'from': fr, 'fromTime': departure_at, 'to': to,
+                          'toTime': '', 'flightNo': str(info.get('flight_number', '')),
+                          'carrier': airline, 'duration': ''}]
+        }]
+        if trip_type == 'roundtrip' and info.get('return_at'):
+            dur_back = info.get('duration_back', 0)
+            legs.append({
+                'from': to, 'fromTime': info['return_at'], 'to': fr, 'toTime': '',
+                'duration': f"{dur_back//60}시간 {dur_back%60}분" if dur_back else '',
+                'stops': info.get('return_transfers', 0), 'carrier': airline,
+                'stopCities': [], 'segments': []
+            })
+        results.append({
+            'id': f'tp_{transfers_str}',
+            'price': str(price), 'currency': 'KRW',
+            'legs': legs, 'validatingCarrier': airline,
+            'bookable': 1, 'agents': []
+        })
+
+    results.sort(key=lambda x: float(x['price']))
+    return results[:5]
+
+# ──────────────────────────────────────────────
 # 라우트
 # ──────────────────────────────────────────────
 @app.route('/')
@@ -392,13 +472,23 @@ def search_flights():
             except Exception as e:
                 return 'rapidapi', []
 
+        def try_travelpayouts():
+            try:
+                r = search_travelpayouts(data)
+                for item in r: item['source'] = 'Aviasales'
+                return 'travelpayouts', r
+            except Exception as e:
+                return 'travelpayouts', []
+
         has_amadeus = bool(os.getenv('AMADEUS_CLIENT_ID') and os.getenv('AMADEUS_CLIENT_SECRET'))
         has_rapid   = bool(os.getenv('RAPIDAPI_KEY'))
+        has_tp      = bool(os.getenv('TRAVELPAYOUTS_TOKEN'))
 
-        with ThreadPoolExecutor(max_workers=2) as ex:
+        with ThreadPoolExecutor(max_workers=3) as ex:
             futures = []
             if has_amadeus: futures.append(ex.submit(try_amadeus))
             if has_rapid:   futures.append(ex.submit(try_rapidapi))
+            if has_tp:      futures.append(ex.submit(try_travelpayouts))
             for f in as_completed(futures):
                 src, r = f.result()
                 if r: results_by_source[src] = r

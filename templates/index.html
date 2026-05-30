@@ -130,6 +130,7 @@ nav { background:var(--blue); padding:0 32px; display:flex; align-items:center; 
 .src-badge { font-size:11px; font-weight:700; padding:3px 9px; border-radius:10px; }
 .src-amadeus { background:#e0e7ff; color:#3730a3; }
 .src-skyscanner { background:#dbeafe; color:#1d4ed8; }
+.src-aviasales { background:#dcfce7; color:#15803d; }
 
 /* FILTERS BAR */
 .filters-bar { background:#fff; border-radius:14px; border:1px solid var(--border); padding:14px 18px; margin-bottom:14px; display:none; flex-wrap:wrap; gap:16px; }
@@ -879,8 +880,10 @@ async function doSearch() {
       allResults = data.results;
       // 소스 배지 표시
       const badges = document.getElementById('sourceBadges');
+      const srcLabel = {amadeus:'Amadeus', rapidapi:'Skyscanner', travelpayouts:'Aviasales'};
+      const srcCls   = {amadeus:'src-amadeus', rapidapi:'src-skyscanner', travelpayouts:'src-aviasales'};
       badges.innerHTML = (data.counts ? Object.entries(data.counts) : []).map(([k,v])=>
-        `<span class="src-badge ${k==='amadeus'?'src-amadeus':'src-skyscanner'}">${k==='amadeus'?'Amadeus':'Skyscanner'} ${v}개</span>`
+        `<span class="src-badge ${srcCls[k]||'src-amadeus'}">${srcLabel[k]||k} ${v}개</span>`
       ).join('');
       applyFilters();
       document.getElementById('alertFormSection').style.display = allResults.length ? '' : 'none';
@@ -1019,13 +1022,24 @@ function buildPriceTable(f) {
   // Skyscanner 결과의 agents (pricing_options에서 파싱된 OTA별 실제 가격)
   const agents = (f.agents || []).filter(ag => ag.price > 0);
 
-  // Skyscanner 자체 최저가 (source === 'Skyscanner' 결과에서 찾기)
+  // Skyscanner 자체 최저가
   const skyMatch = allResults.find(r => r.source === 'Skyscanner' && r.legs[0].from === leg0.from && r.legs[0].to === leg0.to);
   const skyPrice = skyMatch ? parseFloat(skyMatch.price) : 0;
 
+  // Aviasales 최저가
+  const tpMatches = allResults.filter(r => r.source === 'Aviasales' && r.legs[0].from === leg0.from && r.legs[0].to === leg0.to);
+  const tpPrice = tpMatches.length ? Math.min(...tpMatches.map(r => parseFloat(r.price))) : 0;
+  const tpMatch = tpMatches.find(r => parseFloat(r.price) === tpPrice);
+
   // 전체 확인된 가격 중 최저
-  const confirmedPrices = [...agents.map(a => a.price), ...(skyPrice ? [skyPrice] : [])].filter(v => v > 0);
+  const confirmedPrices = [...agents.map(a => a.price), ...(skyPrice ? [skyPrice] : []), ...(tpPrice ? [tpPrice] : [])].filter(v => v > 0);
   const globalMin = confirmedPrices.length ? Math.min(...confirmedPrices) : 0;
+
+  // Aviasales 예약 URL
+  const dep8 = dep0; // YYYYMMDD
+  const tpUrl = isRT
+    ? `https://www.aviasales.com/search/${fr}${dep8}${to}1?marker=734275`
+    : `https://www.aviasales.com/search/${fr}${dep8}1${to}1?marker=734275`;
 
   // ─── Skyscanner 최저가 셀 ───
   const skyHtml = skyPrice ? (() => {
@@ -1036,6 +1050,19 @@ function buildPriceTable(f) {
         ${isBest?'<span style="font-size:9px;background:#fef9c3;color:#b45309;padding:1px 5px;border-radius:5px;font-weight:700">최저가</span>':''}
       </div>
       <div class="site-price" style="${isBest?'color:#16a34a':''}">${fmtPrice(skyMatch.price, skyMatch.currency)}</div>
+      <div class="site-tag tag-api">실시간</div>
+    </a>`;
+  })() : '';
+
+  // ─── Aviasales 최저가 셀 ───
+  const tpHtml = tpPrice ? (() => {
+    const isBest = tpPrice === globalMin;
+    return `<a class="price-cell" href="${tpUrl}" target="_blank" style="${isBest?'border-color:#16a34a;background:#f0fdf4':''}">
+      <div style="display:flex;align-items:center;gap:5px">
+        <div class="site-name">Aviasales</div>
+        ${isBest?'<span style="font-size:9px;background:#fef9c3;color:#b45309;padding:1px 5px;border-radius:5px;font-weight:700">최저가</span>':''}
+      </div>
+      <div class="site-price" style="${isBest?'color:#16a34a':''}">${fmtPrice(String(tpPrice), 'KRW')}</div>
       <div class="site-tag tag-api">실시간</div>
     </a>`;
   })() : '';
@@ -1079,14 +1106,14 @@ function buildPriceTable(f) {
       <div class="site-tag tag-link">바로가기</div>
     </a>`).join('');
 
-  const realCount = (skyPrice ? 1 : 0) + agents.length;
+  const realCount = (skyPrice ? 1 : 0) + (tpPrice ? 1 : 0) + agents.length;
   const noteHtml = realCount === 0
-    ? `<div style="font-size:11px;color:var(--gray);margin-top:6px">※ Skyscanner 데이터 없음 — 각 사이트에서 직접 확인하세요</div>`
+    ? `<div style="font-size:11px;color:var(--gray);margin-top:6px">※ 실시간 가격 데이터 없음 — 각 사이트에서 직접 확인하세요</div>`
     : '';
 
   return `<div class="price-compare">
     <div class="price-compare-title">💰 가격 비교 · ${isRT?'왕복':'편도'} ${ad}인${realCount>0?' — 실시간 가격 '+realCount+'개 확인됨':''}</div>
-    <div class="price-table">${skyHtml}${agentHtml}${staticHtml}</div>
+    <div class="price-table">${skyHtml}${tpHtml}${agentHtml}${staticHtml}</div>
     ${noteHtml}
   </div>`;
 }
@@ -1172,7 +1199,9 @@ function renderResults(results) {
     const srcBadge = f.source === 'Amadeus'
       ? `<span class="src-badge src-amadeus">Amadeus</span>`
       : f.source === 'Skyscanner'
-      ? `<span class="src-badge src-skyscanner">Skyscanner</span>` : '';
+      ? `<span class="src-badge src-skyscanner">Skyscanner</span>`
+      : f.source === 'Aviasales'
+      ? `<span class="src-badge src-aviasales">Aviasales</span>` : '';
     const stopPill = leg0.stops===0
       ? `<span class="stop-pill direct">직항</span>`
       : `<span class="stop-pill via">${leg0.stops}회 경유</span>`;
