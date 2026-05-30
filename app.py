@@ -529,23 +529,70 @@ def search_flights():
 @app.route('/api/flexible', methods=['POST'])
 def search_flexible():
     data = request.json
-    if FLIGHT_API != 'amadeus':
-        return jsonify({'success': False, 'error': '날짜 유연 검색은 Amadeus에서만 지원됩니다.'}), 400
+    fr    = data.get('from', '')
+    to    = data.get('to', '')
+    month = data.get('month', '')
+    trip  = data.get('tripType', 'oneway')
+    token = os.getenv('TRAVELPAYOUTS_TOKEN')
+
+    # ── 1차: Travelpayouts month-matrix ──
+    if token and fr and to and month:
+        try:
+            params = {'currency':'krw','origin':fr,'destination':to,
+                      'month':month,'show_to_affiliates':'true','token':token}
+            if trip == 'roundtrip':
+                params['trip_duration'] = 7
+            r = requests.get('https://api.travelpayouts.com/v2/prices/month-matrix',
+                             params=params, headers={'X-Access-Token':token}, timeout=15)
+            if r.status_code == 200:
+                raw = (r.json().get('data') or [])
+                if raw:
+                    results = sorted([{
+                        'departureDate': item.get('depart_date',''),
+                        'returnDate':    item.get('return_date',''),
+                        'price':         str(item.get('price',0))
+                    } for item in raw if item.get('depart_date') and item.get('price')],
+                    key=lambda x: float(x['price']))
+                    if results:
+                        return jsonify({'success':True,'results':results[:31],'source':'travelpayouts'})
+        except Exception:
+            pass
+
+    # ── 2차: Travelpayouts calendar ──
+    if token and fr and to and month:
+        try:
+            params = {'origin':fr,'destination':to,'depart_date':month,
+                      'currency':'krw','token':token}
+            r = requests.get('https://api.travelpayouts.com/v1/prices/calendar',
+                             params=params, headers={'X-Access-Token':token}, timeout=15)
+            if r.status_code == 200:
+                raw = (r.json().get('data') or {})
+                if raw:
+                    results = sorted([{
+                        'departureDate': ds,
+                        'returnDate': '',
+                        'price': str(info.get('price',0))
+                    } for ds, info in raw.items() if info.get('price')],
+                    key=lambda x: float(x['price']))
+                    if results:
+                        return jsonify({'success':True,'results':results[:31],'source':'travelpayouts'})
+        except Exception:
+            pass
+
+    # ── 3차: Amadeus fallback ──
     try:
-        kwargs = {'origin': data['from'], 'destination': data['to']}
-        if data.get('month'):
-            kwargs['departureDate'] = data['month']
-        if data.get('tripType') == 'oneway':
-            kwargs['oneWay'] = True
+        kwargs = {'origin':fr,'destination':to}
+        if month: kwargs['departureDate'] = month
+        if trip == 'oneway': kwargs['oneWay'] = True
         resp = get_amadeus().shopping.flight_dates.get(**kwargs)
         results = sorted([{
             'departureDate': item['departureDate'],
-            'returnDate':    item.get('returnDate', ''),
+            'returnDate':    item.get('returnDate',''),
             'price':         item['price']['total']
         } for item in resp.data], key=lambda x: float(x['price']))
-        return jsonify({'success': True, 'results': results[:31]})
+        return jsonify({'success':True,'results':results[:31],'source':'amadeus'})
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success':False,'error':str(e)}), 500
 
 # 즐겨찾기
 @app.route('/api/favorites', methods=['GET'])
