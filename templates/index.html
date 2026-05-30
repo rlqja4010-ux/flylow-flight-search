@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlyLow — 항공권 최저가</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --blue:#0057FF; --blue-dark:#003ECC; --sky:#E8F0FF;
+  --text:#1a1a2e; --gray:#6b7280; --light:#f3f4f6;
+  --border:#e5e7eb; --green:#10b981; --red:#ef4444;
+  --shadow:0 4px 24px rgba(0,87,255,.12);
+}
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:#f7f8fc; color:var(--text); }
+
+nav { background:var(--blue); padding:0 32px; display:flex; align-items:center; height:60px; position:sticky; top:0; z-index:100; box-shadow:0 2px 12px rgba(0,87,255,.3); }
+.logo { color:#fff; font-size:22px; font-weight:800; letter-spacing:-.5px; }
+.logo span { color:#93c5fd; }
+
+.hero { background:linear-gradient(135deg,#0057FF 0%,#0ea5e9 100%); padding:48px 32px 96px; text-align:center; }
+.hero h1 { color:#fff; font-size:34px; font-weight:800; margin-bottom:8px; }
+.hero p { color:#bfdbfe; font-size:15px; }
+
+/* SEARCH CARD */
+.search-wrap { max-width:920px; margin:-60px auto 28px; padding:0 16px; position:relative; z-index:10; }
+.search-card { background:#fff; border-radius:20px; box-shadow:0 8px 40px rgba(0,87,255,.15); overflow:visible; }
+
+.trip-tabs { display:flex; border-bottom:1px solid var(--border); }
+.trip-tabs button { flex:1; padding:15px; border:none; background:none; font-size:14px; font-weight:600; color:var(--gray); cursor:pointer; border-bottom:3px solid transparent; transition:.2s; }
+.trip-tabs button.active { color:var(--blue); border-bottom-color:var(--blue); }
+
+.search-body { padding:22px 24px; display:flex; flex-direction:column; gap:14px; }
+
+/* FIELDS */
+.fields-row { display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; }
+.field { flex:1; min-width:160px; position:relative; }
+.field label { font-size:11px; font-weight:700; color:var(--gray); text-transform:uppercase; letter-spacing:.5px; display:block; margin-bottom:5px; }
+.field input, .field select {
+  width:100%; padding:13px 38px 13px 14px; border:2px solid var(--border); border-radius:12px;
+  font-size:15px; color:var(--text); outline:none; transition:.2s; background:#fff; cursor:pointer;
+}
+.field input:focus, .field select:focus { border-color:var(--blue); background:var(--sky); }
+.field input.filled { border-color:#c7d7ff; background:#f0f5ff; }
+.fi { position:absolute; right:12px; bottom:13px; font-size:17px; pointer-events:none; }
+
+/* SWAP */
+.swap-btn {
+  width:40px; height:40px; border-radius:50%; background:var(--blue); border:none;
+  cursor:pointer; color:#fff; font-size:19px; display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; margin-top:22px; transition:.3s;
+}
+.swap-btn:hover { background:var(--blue-dark); transform:rotate(180deg); }
+
+/* PAX ROW */
+.pax-row { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
+.pax-box { display:flex; align-items:center; gap:6px; background:var(--light); border-radius:10px; padding:8px 12px; }
+.pax-box label { font-size:13px; color:var(--gray); font-weight:600; }
+.pax-btn { width:28px; height:28px; border-radius:6px; border:1.5px solid var(--border); background:#fff; cursor:pointer; font-size:15px; color:var(--blue); font-weight:700; display:flex; align-items:center; justify-content:center; }
+.pax-val { font-size:15px; font-weight:700; min-width:18px; text-align:center; }
+
+/* AUTOCOMPLETE */
+.ac-list {
+  position:absolute; top:calc(100% + 6px); left:0; right:0; background:#fff;
+  border:1px solid var(--border); border-radius:14px; box-shadow:0 8px 28px rgba(0,0,0,.13);
+  z-index:300; max-height:260px; overflow-y:auto;
+}
+.ac-list li { list-style:none; padding:11px 14px; cursor:pointer; font-size:14px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border); }
+.ac-list li:last-child { border:none; }
+.ac-list li:hover, .ac-list li.hovered { background:var(--sky); }
+.ac-section { font-size:10px; font-weight:700; color:var(--gray); padding:8px 14px 4px; text-transform:uppercase; letter-spacing:.5px; }
+.iata { background:var(--blue); color:#fff; font-size:11px; font-weight:700; padding:3px 7px; border-radius:6px; min-width:38px; text-align:center; flex-shrink:0; }
+.iata.recent { background:#6b7280; }
+
+/* POPULAR DESTINATIONS */
+.popular-section { margin-top:4px; }
+.route-category { margin-bottom:12px; }
+.route-cat-label { font-size:11px; font-weight:700; color:var(--gray); text-transform:uppercase; letter-spacing:.5px; margin-bottom:7px; }
+.route-cat-items { display:flex; gap:6px; flex-wrap:wrap; }
+.dest-btn {
+  display:flex; align-items:center; gap:5px; padding:7px 12px;
+  background:#fff; border:1.5px solid var(--border); border-radius:20px;
+  cursor:pointer; font-size:13px; font-weight:600; color:var(--text); transition:.2s;
+}
+.dest-btn:hover { border-color:var(--blue); color:var(--blue); background:var(--sky); }
+.dest-btn .flag { font-size:14px; }
+
+/* RECENT SEARCHES */
+.recent-section { margin-top:2px; }
+.recent-label { font-size:12px; font-weight:700; color:var(--gray); margin-bottom:8px; display:flex; justify-content:space-between; }
+.recent-label button { background:none; border:none; color:var(--gray); font-size:11px; cursor:pointer; }
+.recent-label button:hover { color:var(--red); }
+.recent-list { display:flex; flex-direction:column; gap:6px; }
+.recent-item {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 14px; background:var(--light); border-radius:10px;
+  cursor:pointer; transition:.2s; font-size:13px;
+}
+.recent-item:hover { background:var(--sky); }
+.recent-route { font-weight:700; }
+.recent-meta { color:var(--gray); font-size:12px; }
+
+/* SEARCH BTN */
+.search-btn {
+  width:100%; padding:15px; background:var(--blue); color:#fff; border:none; border-radius:14px;
+  font-size:17px; font-weight:700; cursor:pointer; transition:.2s;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.search-btn:hover { background:var(--blue-dark); transform:translateY(-2px); box-shadow:0 4px 16px rgba(0,87,255,.3); }
+.search-btn:disabled { opacity:.6; cursor:not-allowed; transform:none; box-shadow:none; }
+
+/* MULTI CITY */
+.multi-leg { display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end; background:var(--sky); padding:14px; border-radius:12px; margin-bottom:10px; }
+.leg-num { font-size:12px; font-weight:700; color:var(--gray); min-width:18px; }
+.add-leg-btn { padding:10px 16px; background:#fff; border:2px dashed var(--blue); color:var(--blue); border-radius:10px; cursor:pointer; font-size:14px; font-weight:600; }
+.remove-leg-btn { padding:8px 10px; background:#fee2e2; color:var(--red); border:none; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; white-space:nowrap; }
+
+/* LOADING */
+.loading { text-align:center; padding:60px; display:none; }
+.spinner { width:44px; height:44px; border:4px solid var(--border); border-top-color:var(--blue); border-radius:50%; animation:spin .8s linear infinite; margin:0 auto 16px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* RESULTS */
+.results-wrap { max-width:920px; margin:0 auto 32px; padding:0 16px; }
+.results-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:8px; }
+.results-count { font-size:15px; color:var(--gray); }
+.results-count strong { color:var(--text); font-size:18px; }
+.source-badges { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px; }
+.src-badge { font-size:11px; font-weight:700; padding:3px 9px; border-radius:10px; }
+.src-amadeus { background:#e0e7ff; color:#3730a3; }
+.src-skyscanner { background:#dbeafe; color:#1d4ed8; }
+
+/* FILTERS BAR */
+.filters-bar { background:#fff; border-radius:14px; border:1px solid var(--border); padding:14px 18px; margin-bottom:14px; display:none; flex-wrap:wrap; gap:16px; }
+.filters-bar.open { display:flex; }
+.filter-group { display:flex; flex-direction:column; gap:6px; min-width:160px; }
+.filter-group label { font-size:11px; font-weight:700; color:var(--gray); text-transform:uppercase; letter-spacing:.4px; }
+.filter-group select, .filter-group input[type=range] { border:1.5px solid var(--border); border-radius:8px; padding:7px 10px; font-size:13px; outline:none; cursor:pointer; }
+.filter-group select:focus { border-color:var(--blue); }
+.filter-chips { display:flex; gap:6px; flex-wrap:wrap; }
+.fchip { padding:6px 12px; border-radius:16px; border:1.5px solid var(--border); background:#fff; font-size:12px; font-weight:600; color:var(--gray); cursor:pointer; transition:.2s; }
+.fchip.on { border-color:var(--blue); color:var(--blue); background:var(--sky); }
+.range-val { font-size:12px; color:var(--blue); font-weight:700; }
+
+.toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+.sort-select { padding:8px 12px; border:1.5px solid var(--border); border-radius:10px; font-size:13px; font-weight:600; outline:none; cursor:pointer; background:#fff; }
+.filter-toggle-btn { padding:8px 14px; border-radius:10px; border:1.5px solid var(--border); background:#fff; font-size:13px; font-weight:600; color:var(--gray); cursor:pointer; display:flex; align-items:center; gap:5px; }
+.filter-toggle-btn.active { border-color:var(--blue); color:var(--blue); background:var(--sky); }
+.filter-reset { padding:8px 12px; border-radius:10px; border:none; background:#fee2e2; color:var(--red); font-size:12px; font-weight:600; cursor:pointer; display:none; }
+.filter-reset.show { display:block; }
+
+.flight-card { background:#fff; border-radius:16px; margin-bottom:10px; box-shadow:0 2px 10px rgba(0,0,0,.06); border:1px solid var(--border); overflow:hidden; transition:.2s; }
+.flight-card:hover { box-shadow:var(--shadow); transform:translateY(-2px); }
+.card-main { display:flex; align-items:center; padding:18px 22px; gap:18px; flex-wrap:wrap; }
+
+.airline-badge { width:46px; height:46px; border-radius:12px; background:var(--sky); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:var(--blue); flex-shrink:0; border:1.5px solid var(--border); }
+.route-block { flex:1; min-width:200px; }
+.route-row { display:flex; align-items:center; gap:10px; }
+.rt { text-align:center; }
+.rt .t { font-size:22px; font-weight:800; line-height:1; }
+.rt .ap { font-size:11px; color:var(--gray); margin-top:3px; }
+.rt-mid { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; }
+.rt-dur { font-size:12px; color:var(--gray); }
+.rt-bar { width:100%; height:2px; background:linear-gradient(90deg,var(--blue),#0ea5e9); border-radius:2px; position:relative; margin:2px 0; }
+.rt-bar::before,.rt-bar::after { content:''; position:absolute; top:50%; transform:translateY(-50%); width:6px; height:6px; background:var(--blue); border-radius:50%; }
+.rt-bar::before { left:-3px; } .rt-bar::after { right:-3px; }
+.stop-pill { font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px; }
+.direct { background:#dcfce7; color:#16a34a; }
+.via { background:#fef9c3; color:#b45309; }
+.return-sep { height:1px; background:linear-gradient(90deg,transparent,var(--border),transparent); margin:8px 0; }
+
+.price-col { text-align:right; flex-shrink:0; min-width:110px; }
+.price-big { font-size:26px; font-weight:800; color:var(--blue); line-height:1; }
+.price-sub { font-size:11px; color:var(--gray); margin-top:3px; }
+.card-btns { display:flex; flex-direction:column; gap:6px; flex-shrink:0; }
+.fav-btn { background:none; border:1.5px solid var(--border); border-radius:8px; padding:6px 10px; font-size:13px; cursor:pointer; color:var(--gray); transition:.2s; }
+.fav-btn:hover { border-color:#facc15; color:#ca8a04; }
+.detail-btn { background:none; border:none; color:var(--gray); font-size:12px; cursor:pointer; padding:4px; }
+.detail-btn:hover { color:var(--blue); }
+
+/* PRICE COMPARE TABLE */
+.price-compare { border-top:1px solid var(--border); padding:14px 22px; background:var(--light); }
+.price-compare-title { font-size:11px; font-weight:700; color:var(--gray); text-transform:uppercase; letter-spacing:.5px; margin-bottom:10px; }
+.price-table { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:8px; }
+.price-cell { background:#fff; border-radius:10px; border:1.5px solid var(--border); padding:10px 12px; display:flex; flex-direction:column; gap:4px; text-decoration:none; transition:.2s; }
+.price-cell:hover { border-color:var(--blue); transform:translateY(-1px); box-shadow:0 3px 10px rgba(0,87,255,.1); }
+.price-cell .site-name { font-size:11px; font-weight:700; color:var(--gray); }
+.price-cell .site-price { font-size:16px; font-weight:800; color:var(--blue); }
+.price-cell .site-price.check { font-size:12px; color:var(--gray); font-weight:600; }
+.price-cell .site-tag { font-size:10px; padding:2px 6px; border-radius:6px; width:fit-content; }
+.tag-api { background:#dcfce7; color:#16a34a; }
+.tag-link { background:#f3f4f6; color:var(--gray); }
+.booking-links { display:flex; gap:6px; flex-wrap:wrap; padding:0 22px 16px; }
+.blink { padding:7px 14px; border-radius:8px; font-size:12px; font-weight:700; text-decoration:none; transition:.2s; white-space:nowrap; }
+.blink:hover { filter:brightness(1.1); transform:translateY(-1px); }
+.blink.naver     { background:#03c75a; color:#fff; }
+.blink.skyscanner{ background:#0770e3; color:#fff; }
+.blink.google    { background:#4285f4; color:#fff; }
+.blink.kayak     { background:#ff690f; color:#fff; }
+.blink.expedia   { background:#FFC72C; color:#00355F; }
+.blink.trip      { background:#3093E5; color:#fff; }
+.blink.interpark { background:#e4002b; color:#fff; }
+.blink.hana      { background:#0050a0; color:#fff; }
+.blink.modu      { background:#ff6600; color:#fff; }
+.blink.momondo   { background:#6c3094; color:#fff; }
+
+.seg-panel { background:var(--light); border-top:1px solid var(--border); padding:14px 22px; display:none; }
+.seg-panel.open { display:block; }
+.seg-title { font-size:11px; font-weight:700; color:var(--gray); margin-bottom:8px; text-transform:uppercase; letter-spacing:.5px; }
+.seg-item { display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid var(--border); font-size:13px; flex-wrap:wrap; }
+.seg-item:last-child { border:none; }
+.seg-fn { font-weight:700; color:var(--blue); min-width:60px; }
+.seg-rt { flex:1; }
+.seg-dur { color:var(--gray); font-size:12px; }
+
+/* EMPTY */
+.empty-state { text-align:center; padding:60px 20px; color:var(--gray); }
+.empty-icon { font-size:60px; margin-bottom:16px; }
+.empty-state h3 { font-size:18px; color:var(--text); margin-bottom:8px; }
+
+/* BOTTOM */
+.bottom-wrap { max-width:920px; margin:0 auto 60px; padding:0 16px; display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+@media(max-width:600px) { .bottom-wrap { grid-template-columns:1fr; } }
+.panel { background:#fff; border-radius:16px; padding:20px; box-shadow:0 2px 10px rgba(0,0,0,.06); border:1px solid var(--border); }
+.panel h3 { font-size:15px; font-weight:700; margin-bottom:14px; }
+.panel-empty { color:var(--gray); font-size:14px; text-align:center; padding:16px 0; }
+.fav-item,.alert-item { display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--border); font-size:14px; gap:8px; }
+.fav-item:last-child,.alert-item:last-child { border:none; }
+.del-btn { background:none; border:none; color:var(--gray); cursor:pointer; font-size:15px; }
+.del-btn:hover { color:var(--red); }
+.mini-btn { padding:5px 10px; background:var(--sky); color:var(--blue); border:none; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; }
+.alert-form { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+.alert-form input { padding:10px 12px; border:1.5px solid var(--border); border-radius:10px; font-size:13px; outline:none; }
+.alert-form input:focus { border-color:var(--blue); }
+.alert-form button { padding:10px; background:var(--blue); color:#fff; border:none; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; }
+.alert-price { color:var(--green); font-weight:700; }
+
+/* SUPPORTED AIRLINES INFO */
+.airlines-banner { max-width:920px; margin:0 auto 24px; padding:0 16px; }
+.airlines-inner { background:#fff; border-radius:14px; padding:16px 20px; border:1px solid var(--border); display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.airlines-label { font-size:12px; font-weight:700; color:var(--gray); white-space:nowrap; }
+.airline-tag { font-size:12px; padding:4px 10px; background:var(--light); border-radius:20px; color:var(--text); font-weight:500; }
+
+.toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(60px); background:#1a1a2e; color:#fff; padding:12px 24px; border-radius:12px; font-size:14px; font-weight:600; z-index:9999; transition:.3s; opacity:0; }
+.toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+
+@media(max-width:640px) {
+  .hero h1 { font-size:26px; }
+  .card-main { flex-direction:column; align-items:flex-start; }
+  .price-col { text-align:left; }
+}
+</style>
+</head>
+<body>
+
+<nav><div class="logo">Fly<span>Low</span> ✈️</div></nav>
+
+<div class="hero">
+  <h1>항공권 최저가 검색</h1>
+  <p>전 세계 항공편 실시간 비교 · 가격 알림 · 즐겨찾기</p>
+</div>
+
+<div class="search-wrap">
+  <div class="search-card">
+    <div class="trip-tabs">
+      <button class="active" onclick="setTrip('oneway')">편도</button>
+      <button onclick="setTrip('roundtrip')">왕복</button>
+      <button onclick="setTrip('multicity')">다구간</button>
+    </div>
+    <div class="search-body">
+
+      <!-- SIMPLE FORM -->
+      <div id="formSimple">
+        <div class="fields-row">
+          <div class="field">
+            <label>출발지</label>
+            <input id="fromInput" type="text" placeholder="서울/인천 (ICN)" autocomplete="off">
+            <input type="hidden" id="fromCode">
+            <span class="fi">🛫</span>
+            <ul class="ac-list" id="fromList" style="display:none"></ul>
+          </div>
+          <button class="swap-btn" onclick="swapAirports()">⇄</button>
+          <div class="field">
+            <label>도착지</label>
+            <input id="toInput" type="text" placeholder="도시 또는 공항 검색" autocomplete="off">
+            <input type="hidden" id="toCode">
+            <span class="fi">🛬</span>
+            <ul class="ac-list" id="toList" style="display:none"></ul>
+          </div>
+          <div class="field" style="min-width:145px">
+            <label>출발일</label>
+            <input id="departDate" type="date">
+            <span class="fi">📅</span>
+          </div>
+          <div class="field" id="returnGroup" style="min-width:145px;display:none">
+            <label>귀국일</label>
+            <input id="returnDate" type="date">
+            <span class="fi">📅</span>
+          </div>
+        </div>
+
+        <div class="pax-row">
+          <div class="pax-box">
+            <label>성인</label>
+            <button class="pax-btn" onclick="adjPax('adults',-1)">−</button>
+            <span class="pax-val" id="adultsVal">1</span>
+            <button class="pax-btn" onclick="adjPax('adults',1)">+</button>
+          </div>
+          <div class="pax-box">
+            <label>아동</label>
+            <button class="pax-btn" onclick="adjPax('children',-1)">−</button>
+            <span class="pax-val" id="childrenVal">0</span>
+            <button class="pax-btn" onclick="adjPax('children',1)">+</button>
+          </div>
+          <div class="pax-box">
+            <label>유아</label>
+            <button class="pax-btn" onclick="adjPax('infants',-1)">−</button>
+            <span class="pax-val" id="infantsVal">0</span>
+            <button class="pax-btn" onclick="adjPax('infants',1)">+</button>
+          </div>
+          <div class="field" style="min-width:160px;flex:none">
+            <label>좌석 등급</label>
+            <select id="cabin">
+              <option value="ECONOMY">이코노미</option>
+              <option value="PREMIUM_ECONOMY">프리미엄 이코노미</option>
+              <option value="BUSINESS">비즈니스</option>
+              <option value="FIRST">퍼스트</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- MULTI CITY -->
+      <div id="formMulti" style="display:none">
+        <div id="multiLegs"></div>
+        <button class="add-leg-btn" onclick="addLeg()">+ 구간 추가</button>
+      </div>
+
+      <button class="search-btn" id="searchBtn" onclick="doSearch()">✈️&nbsp; 항공권 검색</button>
+
+      <!-- POPULAR DESTINATIONS -->
+      <div class="popular-section" id="popularSection"></div>
+
+      <!-- RECENT SEARCHES -->
+      <div class="recent-section" id="recentSection" style="display:none">
+        <div class="recent-label">
+          <span>최근 검색</span>
+          <button onclick="clearRecent()">전체 삭제</button>
+        </div>
+        <div class="recent-list" id="recentList"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- SUPPORTED AIRLINES -->
+<div class="airlines-banner">
+  <div class="airlines-inner">
+    <span class="airlines-label">검색 가능 항공사</span>
+    <span class="airline-tag">대한항공 KE</span>
+    <span class="airline-tag">아시아나 OZ</span>
+    <span class="airline-tag">제주항공 7C</span>
+    <span class="airline-tag">진에어 LJ</span>
+    <span class="airline-tag">티웨이 TW</span>
+    <span class="airline-tag">에어서울 RS</span>
+    <span class="airline-tag">JAL JL</span>
+    <span class="airline-tag">ANA NH</span>
+    <span class="airline-tag">싱가포르항공 SQ</span>
+    <span class="airline-tag">에미레이트 EK</span>
+    <span class="airline-tag">캐세이퍼시픽 CX</span>
+    <span class="airline-tag">전 세계 400+ 항공사</span>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div class="results-wrap">
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p style="color:var(--gray);font-size:15px;margin-top:4px">항공편 검색 중...</p>
+  </div>
+
+  <div id="resultsSection" style="display:none">
+    <div class="results-header">
+      <div>
+        <div class="results-count"><strong id="resultCount">0</strong>개 항공편 찾음</div>
+        <div class="source-badges" id="sourceBadges"></div>
+      </div>
+    </div>
+
+    <!-- 툴바: 정렬 + 필터 -->
+    <div class="toolbar">
+      <select class="sort-select" id="sortSelect" onchange="applyFilters()">
+        <option value="price">💰 최저가순</option>
+        <option value="depart">🛫 출발시간 빠른순</option>
+        <option value="arrive">🛬 도착시간 빠른순</option>
+        <option value="duration">⏱ 소요시간 짧은순</option>
+      </select>
+      <button class="filter-toggle-btn" id="filterToggleBtn" onclick="toggleFilters()">🔧 필터</button>
+      <button class="filter-reset" id="filterResetBtn" onclick="resetFilters()">필터 초기화</button>
+    </div>
+
+    <!-- 필터 패널 -->
+    <div class="filters-bar" id="filtersBar">
+      <div class="filter-group">
+        <label>경유</label>
+        <div class="filter-chips">
+          <span class="fchip on" data-stop="all" onclick="toggleChip(this,'stop')">전체</span>
+          <span class="fchip" data-stop="0" onclick="toggleChip(this,'stop')">직항</span>
+          <span class="fchip" data-stop="1" onclick="toggleChip(this,'stop')">1회 경유</span>
+          <span class="fchip" data-stop="2+" onclick="toggleChip(this,'stop')">2회 이상</span>
+        </div>
+      </div>
+      <div class="filter-group">
+        <label>출발 시간대</label>
+        <div class="filter-chips">
+          <span class="fchip on" data-depart="all" onclick="toggleChip(this,'depart')">전체</span>
+          <span class="fchip" data-depart="0-6" onclick="toggleChip(this,'depart')">새벽 0~6시</span>
+          <span class="fchip" data-depart="6-12" onclick="toggleChip(this,'depart')">오전 6~12시</span>
+          <span class="fchip" data-depart="12-18" onclick="toggleChip(this,'depart')">오후 12~18시</span>
+          <span class="fchip" data-depart="18-24" onclick="toggleChip(this,'depart')">저녁 18~24시</span>
+        </div>
+      </div>
+      <div class="filter-group">
+        <label>도착 시간대</label>
+        <div class="filter-chips">
+          <span class="fchip on" data-arrive="all" onclick="toggleChip(this,'arrive')">전체</span>
+          <span class="fchip" data-arrive="0-6" onclick="toggleChip(this,'arrive')">새벽 0~6시</span>
+          <span class="fchip" data-arrive="6-12" onclick="toggleChip(this,'arrive')">오전 6~12시</span>
+          <span class="fchip" data-arrive="12-18" onclick="toggleChip(this,'arrive')">오후 12~18시</span>
+          <span class="fchip" data-arrive="18-24" onclick="toggleChip(this,'arrive')">저녁 18~24시</span>
+        </div>
+      </div>
+      <div class="filter-group">
+        <label>데이터 출처</label>
+        <div class="filter-chips">
+          <span class="fchip on" data-src="all" onclick="toggleChip(this,'src')">전체</span>
+          <span class="fchip" data-src="Amadeus" onclick="toggleChip(this,'src')">Amadeus</span>
+          <span class="fchip" data-src="Skyscanner" onclick="toggleChip(this,'src')">Skyscanner</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="resultsList"></div>
+  </div>
+
+  <div class="empty-state" id="emptyState" style="display:none">
+    <div class="empty-icon">😢</div>
+    <h3 id="emptyTitle">검색 결과가 없습니다</h3>
+    <p id="emptyDesc">날짜나 구간을 변경해 다시 시도해보세요</p>
+  </div>
+</div>
+
+<!-- BOTTOM PANELS -->
+<div class="bottom-wrap">
+  <div class="panel">
+    <h3>⭐ 즐겨찾기 노선</h3>
+    <div id="favList"><div class="panel-empty">저장된 노선 없음</div></div>
+  </div>
+  <div class="panel">
+    <h3>🔔 가격 알림</h3>
+    <div id="alertList"><div class="panel-empty">설정된 알림 없음</div></div>
+    <div id="alertFormSection" style="display:none">
+      <div class="alert-form">
+        <input type="number" id="alertTarget" placeholder="목표 가격 (원) — 이하 시 텔레그램 알림">
+        <button onclick="saveAlert()">알림 저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── POPULAR DESTINATIONS ──
+const ROUTES = [
+  { label:'일본', items:[
+    { flag:'🇯🇵', city:'도쿄', iata:'TYO' },
+    { flag:'🇯🇵', city:'오사카', iata:'OSA' },
+    { flag:'🇯🇵', city:'후쿠오카', iata:'FUK' },
+    { flag:'🇯🇵', city:'삿포로', iata:'CTS' },
+    { flag:'🇯🇵', city:'나고야', iata:'NGO' },
+    { flag:'🇯🇵', city:'오키나와', iata:'OKA' },
+  ]},
+  { label:'동남아', items:[
+    { flag:'🇹🇭', city:'방콕', iata:'BKK' },
+    { flag:'🇸🇬', city:'싱가포르', iata:'SIN' },
+    { flag:'🇻🇳', city:'다낭', iata:'DAD' },
+    { flag:'🇻🇳', city:'호치민', iata:'SGN' },
+    { flag:'🇻🇳', city:'하노이', iata:'HAN' },
+    { flag:'🇵🇭', city:'세부', iata:'CEB' },
+    { flag:'🇵🇭', city:'마닐라', iata:'MNL' },
+    { flag:'🇮🇩', city:'발리', iata:'DPS' },
+    { flag:'🇲🇾', city:'쿠알라룸푸르', iata:'KUL' },
+    { flag:'🇹🇭', city:'치앙마이', iata:'CNX' },
+    { flag:'🇰🇭', city:'씨엠립', iata:'REP' },
+    { flag:'🇲🇲', city:'양곤', iata:'RGN' },
+  ]},
+  { label:'중화권', items:[
+    { flag:'🇭🇰', city:'홍콩', iata:'HKG' },
+    { flag:'🇹🇼', city:'타이베이', iata:'TPE' },
+    { flag:'🇨🇳', city:'상하이', iata:'SHA' },
+    { flag:'🇨🇳', city:'베이징', iata:'PEK' },
+    { flag:'🇨🇳', city:'광저우', iata:'CAN' },
+    { flag:'🇲🇴', city:'마카오', iata:'MFM' },
+  ]},
+  { label:'미주', items:[
+    { flag:'🇺🇸', city:'뉴욕', iata:'JFK' },
+    { flag:'🇺🇸', city:'LA', iata:'LAX' },
+    { flag:'🇺🇸', city:'샌프란시스코', iata:'SFO' },
+    { flag:'🇺🇸', city:'시애틀', iata:'SEA' },
+    { flag:'🇺🇸', city:'라스베가스', iata:'LAS' },
+    { flag:'🇺🇸', city:'호놀룰루', iata:'HNL' },
+    { flag:'🇨🇦', city:'밴쿠버', iata:'YVR' },
+    { flag:'🇨🇦', city:'토론토', iata:'YYZ' },
+    { flag:'🇲🇽', city:'칸쿤', iata:'CUN' },
+  ]},
+  { label:'유럽', items:[
+    { flag:'🇫🇷', city:'파리', iata:'CDG' },
+    { flag:'🇬🇧', city:'런던', iata:'LHR' },
+    { flag:'🇩🇪', city:'프랑크푸르트', iata:'FRA' },
+    { flag:'🇮🇹', city:'로마', iata:'FCO' },
+    { flag:'🇮🇹', city:'밀라노', iata:'MXP' },
+    { flag:'🇪🇸', city:'바르셀로나', iata:'BCN' },
+    { flag:'🇳🇱', city:'암스테르담', iata:'AMS' },
+    { flag:'🇨🇭', city:'취리히', iata:'ZRH' },
+    { flag:'🇹🇷', city:'이스탄불', iata:'IST' },
+    { flag:'🇬🇷', city:'아테네', iata:'ATH' },
+  ]},
+  { label:'중동·기타', items:[
+    { flag:'🇦🇪', city:'두바이', iata:'DXB' },
+    { flag:'🇦🇺', city:'시드니', iata:'SYD' },
+    { flag:'🇦🇺', city:'멜버른', iata:'MEL' },
+    { flag:'🇳🇿', city:'오클랜드', iata:'AKL' },
+    { flag:'🇮🇳', city:'델리', iata:'DEL' },
+    { flag:'🇮🇳', city:'뭄바이', iata:'BOM' },
+  ]},
+];
+
+// ── STATE ──
+let tripType = 'oneway';
+let pax = { adults:1, children:0, infants:0 };
+let allResults = [];
+let curSearch = {};
+let multiLegs = [];
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded', () => {
+  // 기본값: 출발지 ICN, 날짜 내일
+  const tomorrow = dateStr(1);
+  document.getElementById('fromInput').value = '서울/인천 (ICN)';
+  document.getElementById('fromCode').value = 'ICN';
+  document.getElementById('fromInput').classList.add('filled');
+  document.getElementById('departDate').value = tomorrow;
+  document.getElementById('returnDate').value = dateStr(8);
+  document.getElementById('returnDate').min = tomorrow;
+
+  renderPopular();
+  renderRecent();
+  initMulti();
+  loadFavs();
+  loadAlerts();
+});
+
+function dateStr(daysFromNow) {
+  const d = new Date();
+  d.setDate(d.getDate() + daysFromNow);
+  return d.toISOString().slice(0,10);
+}
+
+// 출발일 변경 시 귀국일 자동 +7일
+document.getElementById('departDate').addEventListener('change', function() {
+  const d = new Date(this.value);
+  d.setDate(d.getDate() + 7);
+  document.getElementById('returnDate').value = d.toISOString().slice(0,10);
+  document.getElementById('returnDate').min = this.value;
+});
+
+// ── POPULAR DESTINATIONS ──
+function renderPopular() {
+  document.getElementById('popularSection').innerHTML = ROUTES.map(cat => `
+    <div class="route-category">
+      <div class="route-cat-label">${cat.label}</div>
+      <div class="route-cat-items">
+        ${cat.items.map(d => `
+          <button class="dest-btn" onclick="pickDest('${d.iata}','${d.city}')">
+            <span class="flag">${d.flag}</span>${d.city}
+          </button>`).join('')}
+      </div>
+    </div>`).join('');
+}
+function pickDest(iata, city) {
+  document.getElementById('toInput').value = `${city} (${iata})`;
+  document.getElementById('toCode').value = iata;
+  document.getElementById('toInput').classList.add('filled');
+}
+
+// ── RECENT SEARCHES ──
+function getRecent() { try { return JSON.parse(localStorage.getItem('flylow_recent') || '[]'); } catch { return []; } }
+function saveRecent(item) {
+  let arr = getRecent().filter(r => !(r.from === item.from && r.to === item.to));
+  arr.unshift(item);
+  localStorage.setItem('flylow_recent', JSON.stringify(arr.slice(0,5)));
+  renderRecent();
+}
+function clearRecent() { localStorage.removeItem('flylow_recent'); renderRecent(); }
+function renderRecent() {
+  const arr = getRecent();
+  const sec = document.getElementById('recentSection');
+  if (!arr.length) { sec.style.display = 'none'; return; }
+  sec.style.display = '';
+  document.getElementById('recentList').innerHTML = arr.map((r,i) => `
+    <div class="recent-item" onclick="fillRecent(${i})">
+      <span class="recent-route">✈️ ${r.fromName} → ${r.toName}</span>
+      <span class="recent-meta">${r.date} · ${r.type === 'roundtrip' ? '왕복' : '편도'}</span>
+    </div>`).join('');
+}
+function fillRecent(i) {
+  const r = getRecent()[i];
+  if (!r) return;
+  setTrip(r.type || 'oneway');
+  document.getElementById('fromInput').value = r.fromName;
+  document.getElementById('fromCode').value = r.from;
+  document.getElementById('fromInput').classList.add('filled');
+  document.getElementById('toInput').value = r.toName;
+  document.getElementById('toCode').value = r.to;
+  document.getElementById('toInput').classList.add('filled');
+  document.getElementById('departDate').value = r.date;
+  if (r.returnDate) document.getElementById('returnDate').value = r.returnDate;
+}
+
+// ── TRIP TYPE ──
+function setTrip(t) {
+  tripType = t;
+  document.querySelectorAll('.trip-tabs button').forEach((b,i) =>
+    b.classList.toggle('active', ['oneway','roundtrip','multicity'][i] === t));
+  document.getElementById('returnGroup').style.display = t === 'roundtrip' ? '' : 'none';
+  document.getElementById('formSimple').style.display = t === 'multicity' ? 'none' : '';
+  document.getElementById('formMulti').style.display  = t === 'multicity' ? '' : 'none';
+}
+
+// ── PAX ──
+function adjPax(k, d) {
+  pax[k] = Math.max(k === 'adults' ? 1 : 0, pax[k] + d);
+  document.getElementById(k + 'Val').textContent = pax[k];
+}
+
+// ── SWAP ──
+function swapAirports() {
+  const fi = document.getElementById('fromInput'), ti = document.getElementById('toInput');
+  const fc = document.getElementById('fromCode'), tc = document.getElementById('toCode');
+  [fi.value, ti.value] = [ti.value, fi.value];
+  [fc.value, tc.value] = [tc.value, fc.value];
+}
+
+// ── AUTOCOMPLETE ──
+const acTimers = {};
+function setupAC(inId, listId, codeId) {
+  const inp  = document.getElementById(inId);
+  const list = document.getElementById(listId);
+  inp.addEventListener('focus', () => {
+    if (inp.value) inp.select();
+  });
+  inp.addEventListener('input', () => {
+    clearTimeout(acTimers[inId]);
+    const q = inp.value.trim();
+    if (q.length < 1) { list.style.display = 'none'; return; }
+    acTimers[inId] = setTimeout(async () => {
+      try {
+        const data = await fetch(`/api/airports?q=${encodeURIComponent(q)}`).then(r=>r.json());
+        if (!data.length) { list.style.display = 'none'; return; }
+        list.innerHTML = data.map(a => `
+          <li onclick="pickAirport('${inId}','${listId}','${codeId}','${a.iata}',${JSON.stringify(a.city)})">
+            <span class="iata">${a.iata}</span>
+            <div><div style="font-weight:600">${a.city}</div><div style="font-size:12px;color:var(--gray)">${a.name||''} · ${a.country}</div></div>
+          </li>`).join('');
+        list.style.display = 'block';
+      } catch {}
+    }, 260);
+  });
+  document.addEventListener('click', e => {
+    if (!inp.contains(e.target) && !list.contains(e.target)) list.style.display = 'none';
+  });
+}
+function pickAirport(inId, listId, codeId, iata, city) {
+  document.getElementById(inId).value = `${city} (${iata})`;
+  document.getElementById(codeId).value = iata;
+  document.getElementById(inId).classList.add('filled');
+  document.getElementById(listId).style.display = 'none';
+}
+setupAC('fromInput','fromList','fromCode');
+setupAC('toInput','toList','toCode');
+
+// ── MULTI CITY ──
+function initMulti() {
+  multiLegs = [
+    { fromCode:'ICN', from:'서울/인천 (ICN)', toCode:'', to:'', date: dateStr(1) },
+    { fromCode:'', from:'', toCode:'', to:'', date: dateStr(2) }
+  ];
+  renderMulti();
+}
+function addLeg() {
+  if (multiLegs.length >= 5) return;
+  multiLegs.push({ fromCode:'', from:'', toCode:'', to:'', date:'' });
+  renderMulti();
+}
+function removeLeg(i) {
+  if (multiLegs.length <= 2) return;
+  multiLegs.splice(i, 1); renderMulti();
+}
+function renderMulti() {
+  document.getElementById('multiLegs').innerHTML = multiLegs.map((l,i) => `
+    <div class="multi-leg">
+      <span class="leg-num">${i+1}</span>
+      <div class="field" style="position:relative">
+        <label>출발</label>
+        <input id="mf${i}" type="text" value="${l.from}" placeholder="출발지" autocomplete="off" oninput="mAC(${i},'f')">
+        <input type="hidden" id="mfc${i}" value="${l.fromCode}">
+        <ul class="ac-list" id="mfl${i}" style="display:none"></ul>
+      </div>
+      <div class="field" style="position:relative">
+        <label>도착</label>
+        <input id="mt${i}" type="text" value="${l.to}" placeholder="도착지" autocomplete="off" oninput="mAC(${i},'t')">
+        <input type="hidden" id="mtc${i}" value="${l.toCode}">
+        <ul class="ac-list" id="mtl${i}" style="display:none"></ul>
+      </div>
+      <div class="field" style="min-width:140px">
+        <label>날짜</label>
+        <input type="date" id="md${i}" value="${l.date}">
+      </div>
+      ${multiLegs.length > 2 ? `<button class="remove-leg-btn" onclick="removeLeg(${i})">✕</button>` : ''}
+    </div>`).join('');
+}
+const mT = {};
+function mAC(i, dir) {
+  const fld = dir==='f' ? `mf${i}` : `mt${i}`;
+  const lst = dir==='f' ? `mfl${i}` : `mtl${i}`;
+  const q = document.getElementById(fld).value.trim();
+  const el = document.getElementById(lst);
+  if (q.length < 1) { el.style.display='none'; return; }
+  clearTimeout(mT[fld]);
+  mT[fld] = setTimeout(async () => {
+    try {
+      const data = await fetch(`/api/airports?q=${encodeURIComponent(q)}`).then(r=>r.json());
+      if (!data.length) { el.style.display='none'; return; }
+      el.innerHTML = data.map(a => `
+        <li onclick="mPick(${i},'${dir}','${a.iata}',${JSON.stringify(a.city)})">
+          <span class="iata">${a.iata}</span>
+          <span>${a.city} <small style="color:var(--gray)">${a.country}</small></span>
+        </li>`).join('');
+      el.style.display = 'block';
+    } catch {}
+  }, 260);
+}
+function mPick(i, dir, iata, city) {
+  const fld = dir==='f' ? `mf${i}` : `mt${i}`;
+  const cod = dir==='f' ? `mfc${i}` : `mtc${i}`;
+  const lst = dir==='f' ? `mfl${i}` : `mtl${i}`;
+  document.getElementById(fld).value = `${city} (${iata})`;
+  document.getElementById(cod).value = iata;
+  document.getElementById(lst).style.display = 'none';
+}
+
+// ── SEARCH ──
+async function doSearch() {
+  let payload = {};
+  if (tripType === 'multicity') {
+    const legs = multiLegs.map((_,i) => ({
+      from: document.getElementById(`mfc${i}`).value,
+      to:   document.getElementById(`mtc${i}`).value,
+      date: document.getElementById(`md${i}`).value
+    }));
+    if (legs.some(l => !l.from || !l.to || !l.date)) { toast('모든 구간 정보를 입력해주세요'); return; }
+    payload = { tripType:'multicity', legs, ...pax, cabin: document.getElementById('cabin').value };
+  } else {
+    const from = document.getElementById('fromCode').value;
+    const to   = document.getElementById('toCode').value;
+    const dep  = document.getElementById('departDate').value;
+    const fromName = document.getElementById('fromInput').value;
+    const toName   = document.getElementById('toInput').value;
+    if (!from || !to || !dep) { toast('출발지, 도착지, 날짜를 모두 선택해주세요'); return; }
+    payload = { tripType, from, to, departDate:dep,
+      returnDate: document.getElementById('returnDate').value,
+      ...pax, cabin: document.getElementById('cabin').value };
+    curSearch = { from, to, fromName, toName, departDate:dep, returnDate: document.getElementById('returnDate').value, tripType };
+    saveRecent({ from, to, fromName, toName, date:dep,
+      returnDate: document.getElementById('returnDate').value, type:tripType });
+  }
+
+  document.getElementById('searchBtn').disabled = true;
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'none';
+
+  try {
+    const res = await fetch('/api/search', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.success) {
+      allResults = data.results;
+      // 소스 배지 표시
+      const badges = document.getElementById('sourceBadges');
+      badges.innerHTML = (data.counts ? Object.entries(data.counts) : []).map(([k,v])=>
+        `<span class="src-badge ${k==='amadeus'?'src-amadeus':'src-skyscanner'}">${k==='amadeus'?'Amadeus':'Skyscanner'} ${v}개</span>`
+      ).join('');
+      applyFilters();
+      document.getElementById('alertFormSection').style.display = allResults.length ? '' : 'none';
+    } else {
+      showEmpty('검색 결과가 없습니다', data.error || '날짜나 구간을 변경해보세요');
+    }
+  } catch(e) {
+    showEmpty('서버 오류', '잠시 후 다시 시도해주세요');
+  } finally {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('searchBtn').disabled = false;
+  }
+}
+
+function showEmpty(h, p) {
+  document.getElementById('emptyTitle').textContent = h;
+  document.getElementById('emptyDesc').textContent = p;
+  document.getElementById('emptyState').style.display = 'block';
+}
+
+// ── FILTER STATE ──
+let filterState = { stop:'all', depart:'all', arrive:'all', src:'all' };
+
+function toggleFilters() {
+  const bar = document.getElementById('filtersBar');
+  const btn = document.getElementById('filterToggleBtn');
+  bar.classList.toggle('open');
+  btn.classList.toggle('active');
+}
+function toggleChip(el, group) {
+  el.closest('.filter-chips').querySelectorAll('.fchip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  filterState[group] = el.dataset[group];
+  const isFiltered = Object.values(filterState).some(v => v !== 'all');
+  document.getElementById('filterResetBtn').classList.toggle('show', isFiltered);
+  applyFilters();
+}
+function resetFilters() {
+  filterState = { stop:'all', depart:'all', arrive:'all', src:'all' };
+  document.querySelectorAll('.fchip').forEach(c => {
+    const g = Object.keys(c.dataset)[0];
+    c.classList.toggle('on', c.dataset[g] === 'all');
+  });
+  document.getElementById('filterResetBtn').classList.remove('show');
+  applyFilters();
+}
+function getHour(dt) { const t=String(dt||'').slice(11,16); return parseInt(t)||0; }
+function inRange(h, r) { if(r==='all')return true; const[s,e]=r.split('-').map(Number); return h>=s&&h<e; }
+
+function applyFilters() {
+  const sort = document.getElementById('sortSelect').value;
+  let list = [...allResults];
+  list = list.filter(f => {
+    const leg0 = f.legs[0];
+    if (filterState.stop !== 'all') {
+      const s = leg0.stops;
+      if (filterState.stop==='0' && s!==0) return false;
+      if (filterState.stop==='1' && s!==1) return false;
+      if (filterState.stop==='2+' && s<2) return false;
+    }
+    if (!inRange(getHour(leg0.fromTime), filterState.depart)) return false;
+    if (!inRange(getHour(leg0.toTime), filterState.arrive)) return false;
+    if (filterState.src !== 'all' && f.source !== filterState.src) return false;
+    return true;
+  });
+  list.sort((a, b) => {
+    if (sort==='price')  return parseFloat(a.price)-parseFloat(b.price);
+    if (sort==='depart') return (a.legs[0].fromTime||'').localeCompare(b.legs[0].fromTime||'');
+    if (sort==='arrive') return (a.legs[0].toTime||'').localeCompare(b.legs[0].toTime||'');
+    if (sort==='duration') {
+      const d=s=>{const m=String(s).match(/(\d+)시간\s*(\d*)분?/);return m?+m[1]*60+(+m[2]||0):9999;};
+      return d(a.legs[0].duration)-d(b.legs[0].duration);
+    }
+    return 0;
+  });
+  renderResults(list);
+}
+
+// ── RENDER RESULTS ──
+function fmt(dt) { return dt ? String(dt).slice(11,16) : '--:--'; }
+function fmtPrice(p, cur) {
+  const n = parseInt(p);
+  return isNaN(n) ? `${p} ${cur}` : (n > 9999 ? n.toLocaleString() + '원' : `${p} ${cur}`);
+}
+
+// 같은 노선의 반대 소스 가격 찾기
+function findOtherSourcePrice(f) {
+  const leg0 = f.legs[0];
+  const otherSrc = f.source === 'Amadeus' ? 'Skyscanner' : 'Amadeus';
+  // 같은 출발지/도착지/시간대(±1시간) 에서 다른 소스 결과 찾기
+  const match = allResults.find(r => {
+    if (r.source !== otherSrc) return false;
+    if (r.legs[0].from !== leg0.from || r.legs[0].to !== leg0.to) return false;
+    const th = getHour(r.legs[0].fromTime);
+    const fh = getHour(leg0.fromTime);
+    return Math.abs(th - fh) <= 1;
+  });
+  return match ? { price: fmtPrice(match.price, match.currency), src: otherSrc } : null;
+}
+
+function buildPriceTable(f) {
+  const leg0 = f.legs[0];
+  const dep0 = (leg0.fromTime||curSearch.departDate||'').slice(0,10).replace(/-/g,'');
+  const depDate = dep0.slice(0,4)+'-'+dep0.slice(4,6)+'-'+dep0.slice(6,8);
+  const fr = leg0.from||curSearch.from, to = leg0.to||curSearch.to, ad = pax.adults;
+  const isRT = curSearch.tripType === 'roundtrip' && curSearch.returnDate;
+  const ret0 = isRT ? curSearch.returnDate.replace(/-/g,'') : '';
+  const retDate = curSearch.returnDate || '';
+
+  const myPrice = fmtPrice(f.price, f.currency);
+  const otherSrc = findOtherSourcePrice(f);
+
+  // API 가격 (실제 데이터)
+  const apiRows = [
+    { name: f.source === 'Amadeus' ? 'Amadeus GDS' : 'Skyscanner', price: myPrice, tag:'api', url: null },
+  ];
+  if (otherSrc) {
+    apiRows.push({ name: otherSrc.src === 'Amadeus' ? 'Amadeus GDS' : 'Skyscanner', price: otherSrc.price, tag:'api', url: null });
+  }
+
+  // 링크 전용 사이트 (가격 클릭 시 이동)
+  const linkRows = [
+    { name:'네이버항공',  url: isRT ? `https://flight.naver.com/flights/international/${fr}-${to}-${dep0}/${to}-${fr}-${ret0}?adult=${ad}&fareType=Y` : `https://flight.naver.com/flights/international/${fr}-${to}-${dep0}?adult=${ad}&fareType=Y` },
+    { name:'구글플라이트', url: isRT ? `https://www.google.com/travel/flights?q=${fr}+to+${to}+${depDate}+return+${retDate}` : `https://www.google.com/travel/flights?q=${fr}+to+${to}+${depDate}` },
+    { name:'카약',        url: isRT ? `https://www.kayak.co.kr/flights/${fr}-${to}/${dep0}/${ret0}/${ad}adults` : `https://www.kayak.co.kr/flights/${fr}-${to}/${dep0}/${ad}adults` },
+    { name:'익스피디아',  url: isRT ? `https://www.expedia.co.kr/Flights-Search?trip=roundtrip&leg1=from:${fr},to:${to},departure:${depDate}TANYT&leg2=from:${to},to:${fr},departure:${retDate}TANYT&passengers=adults:${ad}` : `https://www.expedia.co.kr/Flights-Search?trip=oneway&leg1=from:${fr},to:${to},departure:${depDate}TANYT&passengers=adults:${ad}` },
+    { name:'트립닷컴',    url: isRT ? `https://kr.trip.com/flights/roundtrip/${fr}-${to}/?depdate=${depDate}&retdate=${retDate}&adult=${ad}` : `https://kr.trip.com/flights/oneway/${fr}-${to}/?depdate=${depDate}&adult=${ad}` },
+    { name:'인터파크',    url: isRT ? `https://fly.interpark.com/flight/search?tripType=RT&depCity=${fr}&arrCity=${to}&depDate=${dep0}&retDate=${ret0}&adultCnt=${ad}` : `https://fly.interpark.com/flight/search?tripType=OW&depCity=${fr}&arrCity=${to}&depDate=${dep0}&adultCnt=${ad}` },
+    { name:'하나투어',    url: isRT ? `https://www.hanatour.com/flight/search?tripType=RT&depApo=${fr}&arrApo=${to}&depDt=${dep0}&retDt=${ret0}&adtCnt=${ad}` : `https://www.hanatour.com/flight/search?tripType=OW&depApo=${fr}&arrApo=${to}&depDt=${dep0}&adtCnt=${ad}` },
+    { name:'모두투어',    url: isRT ? `https://flight.modetour.com/search?tripType=RT&departure=${fr}&destination=${to}&departureDate=${dep0}&returnDate=${ret0}&adultCount=${ad}` : `https://flight.modetour.com/search?tripType=OW&departure=${fr}&destination=${to}&departureDate=${dep0}&adultCount=${ad}` },
+    { name:'모몬도',      url: isRT ? `https://www.momondo.kr/flight-search/${fr}-${to}/${dep0}/${ret0}/${ad}adults` : `https://www.momondo.kr/flight-search/${fr}-${to}/${dep0}/${ad}adults` },
+  ];
+
+  const apiHtml = apiRows.map(r => `
+    <div class="price-cell">
+      <div class="site-name">${r.name}</div>
+      <div class="site-price">${r.price}</div>
+      <div class="site-tag tag-api">실시간 API</div>
+    </div>`).join('');
+
+  const linkHtml = linkRows.map(r => `
+    <a class="price-cell" href="${r.url}" target="_blank">
+      <div class="site-name">${r.name}</div>
+      <div class="site-price check">가격 확인 →</div>
+      <div class="site-tag tag-link">사이트에서 확인</div>
+    </a>`).join('');
+
+  return `<div class="price-compare">
+    <div class="price-compare-title">사이트별 가격 비교 · ${isRT?'왕복':'편도'} ${ad}인</div>
+    <div class="price-table">${apiHtml}${linkHtml}</div>
+  </div>`;
+}
+
+function buildBookLinks(f) {
+  const leg0 = f.legs[0];
+  const dep0 = (leg0.fromTime||curSearch.departDate||'').slice(0,10).replace(/-/g,'');
+  const depDate = dep0.slice(0,4)+'-'+dep0.slice(4,6)+'-'+dep0.slice(6,8);
+  const fr = leg0.from || curSearch.from;
+  const to = leg0.to   || curSearch.to;
+  const ad = pax.adults;
+  const isRT = curSearch.tripType === 'roundtrip' && curSearch.returnDate;
+  const ret0 = isRT ? curSearch.returnDate.replace(/-/g,'') : '';
+  const retDate = curSearch.returnDate || '';
+
+  // 왕복/편도 분기
+  const naverUrl = isRT
+    ? `https://flight.naver.com/flights/international/${fr}-${to}-${dep0}/${to}-${fr}-${ret0}?adult=${ad}&fareType=Y`
+    : `https://flight.naver.com/flights/international/${fr}-${to}-${dep0}?adult=${ad}&fareType=Y`;
+
+  const skyUrl = isRT
+    ? `https://www.skyscanner.co.kr/transport/flights/${fr}/${to}/${dep0}/${ret0}/`
+    : `https://www.skyscanner.co.kr/transport/flights/${fr}/${to}/${dep0}/`;
+
+  const googleUrl = isRT
+    ? `https://www.google.com/travel/flights?q=${fr}+to+${to}+${depDate}+return+${retDate}`
+    : `https://www.google.com/travel/flights?q=${fr}+to+${to}+${depDate}`;
+
+  const kayakUrl = isRT
+    ? `https://www.kayak.co.kr/flights/${fr}-${to}/${dep0}/${ret0}/${ad}adults`
+    : `https://www.kayak.co.kr/flights/${fr}-${to}/${dep0}/${ad}adults`;
+
+  const expediaTrip = isRT ? 'roundtrip' : 'oneway';
+  const expediaUrl = isRT
+    ? `https://www.expedia.co.kr/Flights-Search?trip=roundtrip&leg1=from:${fr},to:${to},departure:${depDate}TANYT&leg2=from:${to},to:${fr},departure:${retDate}TANYT&passengers=adults:${ad}`
+    : `https://www.expedia.co.kr/Flights-Search?trip=oneway&leg1=from:${fr},to:${to},departure:${depDate}TANYT&passengers=adults:${ad}`;
+
+  const tripType2 = isRT ? 'roundtrip' : 'oneway';
+  const tripUrl = isRT
+    ? `https://kr.trip.com/flights/roundtrip/${fr}-${to}/?depdate=${depDate}&retdate=${retDate}&adult=${ad}`
+    : `https://kr.trip.com/flights/oneway/${fr}-${to}/?depdate=${depDate}&adult=${ad}`;
+
+  const ipTrip = isRT ? 'RT' : 'OW';
+  const interparkUrl = isRT
+    ? `https://fly.interpark.com/flight/search?tripType=RT&depCity=${fr}&arrCity=${to}&depDate=${dep0}&retDate=${ret0}&adultCnt=${ad}`
+    : `https://fly.interpark.com/flight/search?tripType=OW&depCity=${fr}&arrCity=${to}&depDate=${dep0}&adultCnt=${ad}`;
+
+  const hanaTrip = isRT ? 'RT' : 'OW';
+  const hanaUrl = isRT
+    ? `https://www.hanatour.com/flight/search?tripType=RT&depApo=${fr}&arrApo=${to}&depDt=${dep0}&retDt=${ret0}&adtCnt=${ad}`
+    : `https://www.hanatour.com/flight/search?tripType=OW&depApo=${fr}&arrApo=${to}&depDt=${dep0}&adtCnt=${ad}`;
+
+  const moduUrl = isRT
+    ? `https://flight.modetour.com/search?tripType=RT&departure=${fr}&destination=${to}&departureDate=${dep0}&returnDate=${ret0}&adultCount=${ad}`
+    : `https://flight.modetour.com/search?tripType=OW&departure=${fr}&destination=${to}&departureDate=${dep0}&adultCount=${ad}`;
+
+  const momondoUrl = isRT
+    ? `https://www.momondo.kr/flight-search/${fr}-${to}/${dep0}/${ret0}/${ad}adults`
+    : `https://www.momondo.kr/flight-search/${fr}-${to}/${dep0}/${ad}adults`;
+
+  return [
+    {n:'네이버항공',  c:'naver',      url: naverUrl},
+    {n:'스카이스캐너',c:'skyscanner', url: skyUrl},
+    {n:'구글플라이트',c:'google',     url: googleUrl},
+    {n:'카약',        c:'kayak',      url: kayakUrl},
+    {n:'익스피디아',  c:'expedia',    url: expediaUrl},
+    {n:'트립닷컴',    c:'trip',       url: tripUrl},
+    {n:'인터파크',    c:'interpark',  url: interparkUrl},
+    {n:'하나투어',    c:'hana',       url: hanaUrl},
+    {n:'모두투어',    c:'modu',       url: moduUrl},
+    {n:'모몬도',      c:'momondo',    url: momondoUrl},
+  ].map(s=>`<a class="blink ${s.c}" href="${s.url}" target="_blank">${s.n}</a>`).join('');
+}
+
+function renderResults(results) {
+  document.getElementById('resultCount').textContent = results.length;
+  document.getElementById('resultsSection').style.display = (results.length||allResults.length) ? '' : 'none';
+  document.getElementById('emptyState').style.display = 'none';
+  if (!results.length) { showEmpty('조건에 맞는 항공편이 없습니다', '필터를 변경해 다시 시도해보세요'); return; }
+
+  document.getElementById('resultsList').innerHTML = results.map((f, idx) => {
+    const leg0 = f.legs[0];
+    const srcBadge = f.source === 'Amadeus'
+      ? `<span class="src-badge src-amadeus">Amadeus</span>`
+      : f.source === 'Skyscanner'
+      ? `<span class="src-badge src-skyscanner">Skyscanner</span>` : '';
+    const stopPill = leg0.stops===0
+      ? `<span class="stop-pill direct">직항</span>`
+      : `<span class="stop-pill via">${leg0.stops}회 경유</span>`;
+    let returnRow = '';
+    if (f.legs[1]) {
+      const l1=f.legs[1];
+      returnRow=`<div class="return-sep"></div>
+        <div class="route-row">
+          <div class="rt"><div class="t">${fmt(l1.fromTime)}</div><div class="ap">${l1.from}</div></div>
+          <div class="rt-mid"><div class="rt-dur">${l1.duration}</div><div class="rt-bar"></div>
+            ${l1.stops===0?'<span class="stop-pill direct">직항</span>':`<span class="stop-pill via">${l1.stops}회 경유</span>`}
+          </div>
+          <div class="rt"><div class="t">${fmt(l1.toTime)}</div><div class="ap">${l1.to}</div></div>
+        </div>`;
+    }
+    const segsHtml = f.legs.map((lg,li)=>`
+      <div class="seg-title">${li===0?'▶ 가는 편':'◀ 오는 편'}</div>
+      ${(lg.segments||[]).map(s=>`
+        <div class="seg-item">
+          <span class="seg-fn">${s.flightNo||s.carrier}</span>
+          <span class="seg-rt">${s.from} ${fmt(s.fromTime)} → ${s.to} ${fmt(s.toTime)}</span>
+          <span class="seg-dur">${s.duration}</span>
+        </div>`).join('')}`).join('<div style="height:6px"></div>');
+
+    return `<div class="flight-card">
+      <div class="card-main">
+        <div class="airline-badge">${(leg0.carrier||'??').slice(0,2).toUpperCase()}</div>
+        <div class="route-block">
+          <div class="route-row">
+            <div class="rt"><div class="t">${fmt(leg0.fromTime)}</div><div class="ap">${leg0.from}</div></div>
+            <div class="rt-mid"><div class="rt-dur">${leg0.duration}</div><div class="rt-bar"></div>${stopPill}</div>
+            <div class="rt"><div class="t">${fmt(leg0.toTime)}</div><div class="ap">${leg0.to}</div></div>
+          </div>${returnRow}
+        </div>
+        <div class="price-col">
+          <div class="price-big">${fmtPrice(f.price,f.currency)}</div>
+          <div style="margin-top:4px">${srcBadge}</div>
+          <div class="price-sub">1인 기준</div>
+        </div>
+        <div class="card-btns">
+          <button class="fav-btn" onclick="saveFav(${idx})">⭐</button>
+          <button class="detail-btn" id="dtBtn${idx}" onclick="toggleSeg(${idx})">상세 ▼</button>
+        </div>
+      </div>
+      ${buildPriceTable(f)}
+      <div class="seg-panel" id="seg${idx}">${segsHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleSeg(idx) {
+  const el = document.getElementById('seg'+idx);
+  const btn = document.getElementById('dtBtn'+idx);
+  el.classList.toggle('open');
+  btn.textContent = el.classList.contains('open') ? '닫기 ▲' : '상세 ▼';
+}
+
+// ── FAVS ──
+async function loadFavs() {
+  const data = await fetch('/api/favorites').then(r=>r.json());
+  const el = document.getElementById('favList');
+  if (!data.length) { el.innerHTML = '<div class="panel-empty">저장된 노선 없음</div>'; return; }
+  el.innerHTML = data.map(f => `
+    <div class="fav-item">
+      <span>✈️ <b>${f.from}</b> → <b>${f.to}</b></span>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="mini-btn" onclick="quickSearch('${f.from}','${f.to}')">검색</button>
+        <button class="del-btn" onclick="delFav('${f.id}')">✕</button>
+      </div>
+    </div>`).join('');
+}
+function quickSearch(from, to) {
+  document.getElementById('fromCode').value = from;
+  document.getElementById('fromInput').value = from;
+  document.getElementById('toCode').value = to;
+  document.getElementById('toInput').value = to;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+async function saveFav(idx) {
+  const f = allResults[idx];
+  if (!f) return;
+  const leg = f.legs[0];
+  const res = await fetch('/api/favorites', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ from: leg.from, to: leg.to })
+  }).then(r=>r.json());
+  if (res.success) { toast('즐겨찾기에 저장됐어요 ⭐'); loadFavs(); }
+  else toast(res.error || '이미 저장된 노선입니다');
+}
+async function delFav(id) {
+  await fetch(`/api/favorites/${id}`, {method:'DELETE'});
+  toast('삭제됐습니다'); loadFavs();
+}
+
+// ── ALERTS ──
+async function loadAlerts() {
+  const data = await fetch('/api/alerts').then(r=>r.json());
+  const el = document.getElementById('alertList');
+  if (!data.length) { el.innerHTML = '<div class="panel-empty">설정된 알림 없음</div>'; return; }
+  el.innerHTML = data.map(a => `
+    <div class="alert-item">
+      <div>
+        <div style="font-weight:700">${a.from} → ${a.to} · ${a.departDate}</div>
+        <div style="font-size:12px;color:var(--gray)">목표가: <span class="alert-price">${parseInt(a.targetPrice).toLocaleString()}원</span></div>
+      </div>
+      <button class="del-btn" onclick="delAlert('${a.id}')">✕</button>
+    </div>`).join('');
+}
+async function saveAlert() {
+  const tp = document.getElementById('alertTarget').value;
+  if (!curSearch.from || !tp) { toast('먼저 검색 후 목표 가격을 입력하세요'); return; }
+  await fetch('/api/alerts', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ ...curSearch, targetPrice: tp })
+  });
+  toast('가격 알림이 설정됐어요 🔔');
+  document.getElementById('alertTarget').value = '';
+  loadAlerts();
+}
+async function delAlert(id) {
+  await fetch(`/api/alerts/${id}`, {method:'DELETE'});
+  toast('알림이 삭제됐습니다'); loadAlerts();
+}
+
+// ── TOAST ──
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>

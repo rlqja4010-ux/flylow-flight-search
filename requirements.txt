@@ -1,0 +1,6 @@
+flask
+amadeus
+python-dotenv
+requests
+apscheduler
+gunicorn
