@@ -1004,85 +1004,73 @@ function buildPriceTable(f) {
     momondo:    isRT ? `https://www.momondo.kr/flight-search/${fr}-${to}/${dep0}/${ret0}/${ad}adults` : `https://www.momondo.kr/flight-search/${fr}-${to}/${dep0}/${ad}adults`,
   };
 
-  // ─── 1. API 실시간 가격 수집 ───
-  const myVal = parseFloat(f.price) || 0;
-  const mySrc = f.source === 'Amadeus' ? 'Amadeus GDS' : 'Skyscanner';
-  const mySrcUrl = f.source === 'Skyscanner' ? urls.skyscanner : null;
-  const apiPrices = [{ src: mySrc, val: myVal, label: fmtPrice(f.price, f.currency), url: mySrcUrl }];
-
-  const other = findOtherSourcePrice(f);
-  if (other) {
-    const otherMatch = allResults.find(r => r.source === other.src && r.legs[0].from === leg0.from);
-    const otherVal = otherMatch ? parseFloat(otherMatch.price) : 0;
-    const otherUrl = other.src === 'Skyscanner' ? urls.skyscanner : null;
-    if (otherVal > 0) apiPrices.push({ src: other.src === 'Amadeus' ? 'Amadeus GDS' : 'Skyscanner', val: otherVal, label: fmtPrice(otherMatch.price, otherMatch.currency), url: otherUrl });
-  }
-  apiPrices.sort((a,b) => a.val - b.val);
-
-  // ─── 2. Skyscanner 에이전트별 실제 가격 ───
-  // 알려진 OTA 이름 → 한국어 + URL 매핑
+  // ─── Skyscanner 에이전트별 실제 가격 수집 ───
   const agentMap = {
-    'Expedia':        { label:'익스피디아',   url: urls.expedia,   cls:'expedia'   },
-    'Trip.com':       { label:'트립닷컴',     url: urls.trip,      cls:'trip'      },
-    'Booking.com':    { label:'부킹닷컴',     url: `https://www.booking.com/flights/${fr.toLowerCase()}/${to.toLowerCase()}.ko.html`, cls:'' },
-    'Kayak':          { label:'카약',         url: urls.kayak,     cls:'kayak'     },
-    'Momondo':        { label:'모몬도',       url: urls.momondo,   cls:'momondo'   },
-    'Kiwi.com':       { label:'키위닷컴',     url: `https://www.kiwi.com/en/search/results/${fr}/${to}/${depDate}`, cls:'' },
-    'Priceline':      { label:'프라이스라인', url: `https://www.priceline.com/flights/search?origin=${fr}&destination=${to}&departure_date=${depDate}`, cls:'' },
-    'CheapOair':      { label:'CheapOair',    url: `https://www.cheapoair.com/flights/cheap-flights-from-${fr}-to-${to}`, cls:'' },
-    'Wego':           { label:'위고',         url: `https://www.wegotravel.com/flights/${fr}-${to}?trip_type=one_way&departure_date=${depDate}`, cls:'' },
-    'Cleartrip':      { label:'클리어트립',   url: `https://www.cleartrip.com/flights/results?from=${fr}&to=${to}&depart_date=${depDate}`, cls:'' },
+    'Expedia':     { label:'익스피디아',   url: urls.expedia  },
+    'Trip.com':    { label:'트립닷컴',     url: urls.trip     },
+    'Booking.com': { label:'부킹닷컴',     url: `https://www.booking.com/flights/search?from=${fr}&to=${to}&depart=${depDate}` },
+    'Kayak':       { label:'카약',         url: urls.kayak    },
+    'Momondo':     { label:'모몬도',       url: urls.momondo  },
+    'Kiwi.com':    { label:'키위닷컴',     url: `https://www.kiwi.com/en/search/results/${fr}/${to}/${depDate}` },
+    'Priceline':   { label:'프라이스라인', url: `https://www.priceline.com/flights/search?origin=${fr}&destination=${to}&departure_date=${depDate}` },
+    'Wego':        { label:'위고',         url: `https://www.wegotravel.com/flights/${fr}-${to}?trip_type=one_way&departure_date=${depDate}` },
   };
 
+  // Skyscanner 결과의 agents (pricing_options에서 파싱된 OTA별 실제 가격)
   const agents = (f.agents || []).filter(ag => ag.price > 0);
-  const allPrices = [...apiPrices.map(p => p.val), ...agents.map(a => a.price)].filter(v => v > 0);
-  const globalMin = allPrices.length ? Math.min(...allPrices) : 0;
 
-  // ─── 3. API 가격 셀 렌더 ───
-  const apiHtml = apiPrices.map(p => {
-    const isBest = p.val === globalMin;
-    const inner = `
-      <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
-        <div class="site-name">${p.src}</div>
-        ${isBest ? '<span style="font-size:9px;background:#fef9c3;color:#b45309;padding:1px 5px;border-radius:5px;font-weight:700">최저가</span>' : ''}
-      </div>
-      <div class="site-price" style="${isBest?'color:#16a34a;font-size:18px':''}">
-        ${p.label}${isBest&&allPrices.length>1?'<span style="font-size:9px;margin-left:4px;color:#16a34a">▼</span>':''}
-      </div>
-      <div class="site-tag tag-api">실시간 API</div>`;
-    return p.url
-      ? `<a class="price-cell" href="${p.url}" target="_blank" style="${isBest?'border-color:#16a34a;background:#f0fdf4':''}">${inner}</a>`
-      : `<div class="price-cell" style="${isBest?'border-color:#16a34a;background:#f0fdf4':''}">${inner}</div>`;
-  }).join('');
+  // Skyscanner 자체 최저가 (source === 'Skyscanner' 결과에서 찾기)
+  const skyMatch = allResults.find(r => r.source === 'Skyscanner' && r.legs[0].from === leg0.from && r.legs[0].to === leg0.to);
+  const skyPrice = skyMatch ? parseFloat(skyMatch.price) : 0;
 
-  // ─── 4. 에이전트별 실제 가격 셀 렌더 ───
+  // 전체 확인된 가격 중 최저
+  const confirmedPrices = [...agents.map(a => a.price), ...(skyPrice ? [skyPrice] : [])].filter(v => v > 0);
+  const globalMin = confirmedPrices.length ? Math.min(...confirmedPrices) : 0;
+
+  // ─── Skyscanner 최저가 셀 ───
+  const skyHtml = skyPrice ? (() => {
+    const isBest = skyPrice === globalMin;
+    return `<a class="price-cell" href="${urls.skyscanner}" target="_blank" style="${isBest?'border-color:#16a34a;background:#f0fdf4':''}">
+      <div style="display:flex;align-items:center;gap:5px">
+        <div class="site-name">스카이스캐너</div>
+        ${isBest?'<span style="font-size:9px;background:#fef9c3;color:#b45309;padding:1px 5px;border-radius:5px;font-weight:700">최저가</span>':''}
+      </div>
+      <div class="site-price" style="${isBest?'color:#16a34a':''}">${fmtPrice(skyMatch.price, skyMatch.currency)}</div>
+      <div class="site-tag tag-api">실시간</div>
+    </a>`;
+  })() : '';
+
+  // ─── 에이전트 실제 가격 셀 (Skyscanner pricing_options) ───
   const agentHtml = agents.map(ag => {
-    const mapped = agentMap[ag.name] || { label: ag.name, url: ag.url || urls.skyscanner, cls: '' };
+    const mapped = agentMap[ag.name] || { label: ag.name, url: ag.url || urls.skyscanner };
     const isBest = ag.price === globalMin;
-    const label = fmtPrice(String(ag.price), f.currency);
-    const inner = `
-      <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+    return `<a class="price-cell" href="${mapped.url}" target="_blank" style="${isBest?'border-color:#16a34a;background:#f0fdf4':''}">
+      <div style="display:flex;align-items:center;gap:5px">
         <div class="site-name">${mapped.label}</div>
-        ${isBest ? '<span style="font-size:9px;background:#fef9c3;color:#b45309;padding:1px 5px;border-radius:5px;font-weight:700">최저가</span>' : ''}
+        ${isBest?'<span style="font-size:9px;background:#fef9c3;color:#b45309;padding:1px 5px;border-radius:5px;font-weight:700">최저가</span>':''}
       </div>
-      <div class="site-price" style="${isBest?'color:#16a34a;font-size:18px':''}">${label}</div>
-      <div class="site-tag tag-api">Skyscanner 실가</div>`;
-    return `<a class="price-cell" href="${mapped.url}" target="_blank" style="${isBest?'border-color:#16a34a;background:#f0fdf4':''}">${inner}</a>`;
+      <div class="site-price" style="${isBest?'color:#16a34a':''}">${fmtPrice(String(ag.price), f.currency)}</div>
+      <div class="site-tag tag-api">실시간</div>
+    </a>`;
   }).join('');
 
-  // ─── 5. API 미지원 예약 링크 (에이전트에 없는 것만) ───
-  const coveredNames = new Set(agents.map(ag => (agentMap[ag.name]?.label || ag.name)));
+  // ─── 예약 바로가기 (API 가격 없는 사이트) ───
+  const coveredLabels = new Set([
+    ...(skyPrice ? ['스카이스캐너'] : []),
+    ...agents.map(ag => (agentMap[ag.name]?.label || ag.name))
+  ]);
   const staticSites = [
     {n:'네이버항공',  url:urls.naver},
+    {n:'스카이스캐너',url:urls.skyscanner},
     {n:'구글플라이트',url:urls.google},
-    {n:'인터파크',    url:urls.interpark},
-    {n:'하나투어',    url:urls.hana},
-    {n:'모두투어',    url:urls.modu},
     {n:'카약',        url:urls.kayak},
     {n:'익스피디아',  url:urls.expedia},
     {n:'트립닷컴',    url:urls.trip},
+    {n:'인터파크',    url:urls.interpark},
+    {n:'하나투어',    url:urls.hana},
+    {n:'모두투어',    url:urls.modu},
     {n:'모몬도',      url:urls.momondo},
-  ].filter(s => !coveredNames.has(s.n));
+  ].filter(s => !coveredLabels.has(s.n));
 
   const staticHtml = staticSites.map(s =>
     `<a class="price-cell" href="${s.url}" target="_blank">
@@ -1091,10 +1079,15 @@ function buildPriceTable(f) {
       <div class="site-tag tag-link">바로가기</div>
     </a>`).join('');
 
-  const realCount = apiPrices.length + agents.length;
+  const realCount = (skyPrice ? 1 : 0) + agents.length;
+  const noteHtml = realCount === 0
+    ? `<div style="font-size:11px;color:var(--gray);margin-top:6px">※ Skyscanner 데이터 없음 — 각 사이트에서 직접 확인하세요</div>`
+    : '';
+
   return `<div class="price-compare">
-    <div class="price-compare-title">💰 가격 비교 · ${isRT?'왕복':'편도'} ${ad}인 — 실시간 가격 ${realCount}개 확인됨</div>
-    <div class="price-table">${apiHtml}${agentHtml}${staticHtml}</div>
+    <div class="price-compare-title">💰 가격 비교 · ${isRT?'왕복':'편도'} ${ad}인${realCount>0?' — 실시간 가격 '+realCount+'개 확인됨':''}</div>
+    <div class="price-table">${skyHtml}${agentHtml}${staticHtml}</div>
+    ${noteHtml}
   </div>`;
 }
 
