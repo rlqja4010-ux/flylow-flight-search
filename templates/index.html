@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FlyLow — 항공권 최저가</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✈️</text></svg>">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 :root {
@@ -457,6 +458,25 @@ nav {
 .empty-state h3 { font-size:18px; color:var(--text); margin-bottom:8px; font-weight:700; }
 .empty-state p { font-size:14px; }
 
+/* ── PRICE CHART ── */
+.chart-wrap {
+  max-width:900px; margin:0 auto 24px; padding:0 20px; display:none;
+}
+.chart-wrap.show { display:block; }
+.chart-card {
+  background:#fff; border-radius:var(--radius-lg); padding:24px;
+  box-shadow:var(--shadow-sm); border:1.5px solid var(--border);
+}
+.chart-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:8px; }
+.chart-title { font-size:15px; font-weight:700; color:var(--text); }
+.chart-stats { display:flex; gap:16px; flex-wrap:wrap; }
+.chart-stat { text-align:center; }
+.chart-stat .label { font-size:10px; color:var(--gray); font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
+.chart-stat .val { font-size:16px; font-weight:800; color:var(--navy); margin-top:2px; }
+.chart-stat .val.green { color:var(--green); }
+.chart-stat .val.red { color:#ef4444; }
+.chart-note { font-size:11px; color:var(--gray); margin-top:12px; text-align:center; }
+
 /* ── BOTTOM PANELS ── */
 .bottom-wrap {
   max-width:900px; margin:0 auto 60px; padding:0 20px;
@@ -750,6 +770,35 @@ nav {
     <div class="empty-icon">&#9992;</div>
     <h3 id="emptyTitle">검색 결과가 없습니다</h3>
     <p id="emptyDesc">날짜나 구간을 변경해 다시 시도해보세요</p>
+  </div>
+</div>
+
+<!-- PRICE TREND CHART -->
+<div class="chart-wrap" id="chartWrap">
+  <div class="chart-card">
+    <div class="chart-header">
+      <div class="chart-title" id="chartTitle">가격 추이</div>
+      <div class="chart-stats">
+        <div class="chart-stat">
+          <div class="label">현재가</div>
+          <div class="val" id="chartCur">—</div>
+        </div>
+        <div class="chart-stat">
+          <div class="label">최저가</div>
+          <div class="val green" id="chartMin">—</div>
+        </div>
+        <div class="chart-stat">
+          <div class="label">최고가</div>
+          <div class="val red" id="chartMax">—</div>
+        </div>
+        <div class="chart-stat">
+          <div class="label">평균가</div>
+          <div class="val" id="chartAvg">—</div>
+        </div>
+      </div>
+    </div>
+    <canvas id="priceChart" height="90"></canvas>
+    <div class="chart-note" id="chartNote"></div>
   </div>
 </div>
 
@@ -1117,6 +1166,7 @@ async function doSearch() {
       ).join('');
       applyFilters();
       document.getElementById('alertFormSection').style.display = allResults.length ? '' : 'none';
+      if (curSearch.from && curSearch.to) loadPriceChart(curSearch.from, curSearch.to);
     } else {
       showEmpty('검색 결과가 없습니다', data.error || '날짜나 구간을 변경해보세요');
     }
@@ -1552,6 +1602,91 @@ async function saveAlert() {
 async function delAlert(id) {
   await fetch(`/api/alerts/${id}`, {method:'DELETE'});
   toast('알림이 삭제됐습니다'); loadAlerts();
+}
+
+// ── PRICE TREND CHART ──
+let priceChartInstance = null;
+
+async function loadPriceChart(from, to) {
+  if (!from || !to) return;
+  try {
+    const data = await fetch(`/api/history/route?from=${from}&to=${to}`).then(r => r.json());
+    if (!data || data.length < 2) {
+      document.getElementById('chartWrap').classList.remove('show');
+      return;
+    }
+
+    const labels = data.map(d => {
+      const dt = new Date(d.searchedAt);
+      return `${dt.getMonth()+1}/${dt.getDate()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+    });
+    const prices = data.map(d => parseFloat(d.price));
+    const minP = Math.min(...prices);
+    const maxP = Math.max(...prices);
+    const avgP = Math.round(prices.reduce((a,b)=>a+b,0)/prices.length);
+    const curP = prices[prices.length-1];
+
+    const fmt = p => p >= 10000 ? Math.round(p).toLocaleString()+'원' : p+'원';
+    document.getElementById('chartCur').textContent = fmt(curP);
+    document.getElementById('chartMin').textContent = fmt(minP);
+    document.getElementById('chartMax').textContent = fmt(maxP);
+    document.getElementById('chartAvg').textContent = fmt(avgP);
+    document.getElementById('chartTitle').textContent = `${from} → ${to} 가격 추이`;
+    document.getElementById('chartNote').textContent = `최근 ${data.length}회 검색 기록 기준`;
+
+    const ctx = document.getElementById('priceChart').getContext('2d');
+    if (priceChartInstance) priceChartInstance.destroy();
+    priceChartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: '검색가',
+          data: prices,
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37,99,235,.08)',
+          borderWidth: 2.5,
+          pointRadius: 4,
+          pointBackgroundColor: prices.map(p =>
+            p === minP ? '#059669' : p === maxP ? '#ef4444' : '#2563eb'
+          ),
+          pointRadius: prices.map(p =>
+            p === minP || p === maxP ? 6 : 3
+          ),
+          tension: 0.35,
+          fill: true,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => Math.round(ctx.raw).toLocaleString() + '원'
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { font: { size: 10 }, maxTicksLimit: 8 },
+            grid: { display: false }
+          },
+          y: {
+            ticks: {
+              font: { size: 10 },
+              callback: v => Math.round(v/10000)+'만'
+            },
+            grid: { color: 'rgba(0,0,0,.05)' }
+          }
+        }
+      }
+    });
+
+    document.getElementById('chartWrap').classList.add('show');
+  } catch(e) {
+    document.getElementById('chartWrap').classList.remove('show');
+  }
 }
 
 // ── TOAST ──

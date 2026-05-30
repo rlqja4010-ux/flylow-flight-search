@@ -643,6 +643,16 @@ def get_history():
     history = load_json(HISTORY_FILE)
     return jsonify(list(reversed(history[-20:])))
 
+@app.route('/api/history/route')
+def get_route_history():
+    fr = request.args.get('from', '')
+    to = request.args.get('to', '')
+    if not fr or not to:
+        return jsonify([])
+    history = load_json(HISTORY_FILE)
+    route = [h for h in history if h.get('from') == fr and h.get('to') == to]
+    return jsonify(route[-60:])
+
 # ──────────────────────────────────────────────
 # 가격 알림 스케줄러
 # ──────────────────────────────────────────────
