@@ -253,13 +253,35 @@ def parse_rapidapi_results(itineraries, currency='KRW'):
                 'segments':  parsed_segs
             })
 
+        # 에이전트별 가격 (Skyscanner pricing_options)
+        agents = []
+        seen_agents = {}
+        for opt in item.get('pricing_options', []):
+            opt_price_raw = opt.get('price', {}).get('raw', 0)
+            try:
+                opt_price = int(float(opt_price_raw))
+            except Exception:
+                opt_price = 0
+            for ag in opt.get('agents', []):
+                name = ag.get('name', '') or ag.get('id', '')
+                if not name:
+                    continue
+                if name not in seen_agents or opt_price < seen_agents[name]['price']:
+                    seen_agents[name] = {
+                        'name':  name,
+                        'price': opt_price,
+                        'url':   ag.get('url', '')
+                    }
+        agents = sorted(seen_agents.values(), key=lambda x: x['price'])[:10]
+
         results.append({
             'id':               str(i),
             'price':            price,
             'currency':         currency,
             'legs':             legs,
             'validatingCarrier':legs[0]['carrier'] if legs else '',
-            'bookable':         1
+            'bookable':         1,
+            'agents':           agents
         })
     try:
         results.sort(key=lambda x: float(x['price']))

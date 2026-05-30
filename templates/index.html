@@ -242,8 +242,21 @@ nav { background:var(--blue); padding:0 32px; display:flex; align-items:center; 
 .airlines-label { font-size:12px; font-weight:700; color:var(--gray); white-space:nowrap; }
 .airline-tag { font-size:12px; padding:4px 10px; background:var(--light); border-radius:20px; color:var(--text); font-weight:500; }
 
+/* INCOGNITO TIP */
+.tip-banner { max-width:920px; margin:0 auto 14px; padding:0 16px; }
+.tip-inner { background:#fffbeb; border:1.5px solid #fcd34d; border-radius:14px; padding:12px 18px; display:flex; align-items:center; gap:10px; font-size:13px; color:#92400e; flex-wrap:wrap; }
+.tip-inner strong { font-weight:700; }
+.tip-close { margin-left:auto; background:none; border:none; font-size:16px; cursor:pointer; color:#92400e; flex-shrink:0; }
+
 .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(60px); background:#1a1a2e; color:#fff; padding:12px 24px; border-radius:12px; font-size:14px; font-weight:600; z-index:9999; transition:.3s; opacity:0; }
 .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+
+/* SHARE BTN */
+.share-btn { padding:8px 14px; border-radius:10px; border:1.5px solid var(--border); background:#fff; font-size:13px; font-weight:600; color:var(--gray); cursor:pointer; display:flex; align-items:center; gap:5px; }
+.share-btn:hover { border-color:var(--blue); color:var(--blue); }
+
+/* EARLY BIRD */
+.early-badge { font-size:10px; font-weight:700; background:#e0e7ff; color:#3730a3; padding:2px 7px; border-radius:6px; margin-left:6px; }
 
 /* PRICE CALENDAR */
 .cal-toggle-btn {
@@ -407,6 +420,16 @@ nav { background:var(--blue); padding:0 32px; display:flex; align-items:center; 
   </div>
 </div>
 
+<!-- INCOGNITO TIP BANNER -->
+<div class="tip-banner" id="tipBanner">
+  <div class="tip-inner">
+    <span>🕵️</span>
+    <span><strong>가격이 오르셨나요?</strong> 시크릿/프라이빗 모드로 검색하면 쿠키 추적 없이 더 저렴한 가격을 볼 수 있어요.</span>
+    <span style="color:#b45309;font-size:12px">Chrome: Ctrl+Shift+N &nbsp;|&nbsp; Safari: Cmd+Shift+N</span>
+    <button class="tip-close" onclick="document.getElementById('tipBanner').style.display='none'">✕</button>
+  </div>
+</div>
+
 <!-- SUPPORTED AIRLINES -->
 <div class="airlines-banner">
   <div class="airlines-inner">
@@ -439,6 +462,7 @@ nav { background:var(--blue); padding:0 32px; display:flex; align-items:center; 
         <div class="results-count"><strong id="resultCount">0</strong>개 항공편 찾음</div>
         <div class="source-badges" id="sourceBadges"></div>
       </div>
+      <button class="share-btn" onclick="shareSearch()">🔗 검색 공유</button>
     </div>
 
     <!-- 툴바: 정렬 + 필터 -->
@@ -966,21 +990,7 @@ function buildPriceTable(f) {
   const ret0 = isRT ? curSearch.returnDate.replace(/-/g,'') : '';
   const retDate = curSearch.returnDate || '';
 
-  // 실제 API 가격만 수집
-  const myVal = parseFloat(f.price) || 0;
-  const myLabel = fmtPrice(f.price, f.currency);
-  const mySrc = f.source === 'Amadeus' ? 'Amadeus GDS' : 'Skyscanner';
-
-  const other = findOtherSourcePrice(f);
-  const otherVal = other ? parseFloat(allResults.find(r => r.source === other.src && r.legs[0].from === leg0.from)?.price || 0) : 0;
-
-  // 두 소스 중 최저가 판별
-  const prices = [{ src: mySrc, val: myVal, label: myLabel }];
-  if (other) prices.push({ src: other.src === 'Amadeus' ? 'Amadeus GDS' : 'Skyscanner', val: parseFloat(other.price?.replace(/[^0-9]/g,'')||0), label: other.price });
-  prices.sort((a,b) => a.val - b.val);
-  const lowestVal = prices[0].val;
-
-  // 예약 링크 URL 생성
+  // 예약 URL 맵
   const urls = {
     naver:      isRT ? `https://flight.naver.com/flights/international/${fr}-${to}-${dep0}/${to}-${fr}-${ret0}?adult=${ad}&fareType=Y` : `https://flight.naver.com/flights/international/${fr}-${to}-${dep0}?adult=${ad}&fareType=Y`,
     skyscanner: isRT ? `https://www.skyscanner.co.kr/transport/flights/${fr}/${to}/${dep0}/${ret0}/` : `https://www.skyscanner.co.kr/transport/flights/${fr}/${to}/${dep0}/`,
@@ -994,39 +1004,97 @@ function buildPriceTable(f) {
     momondo:    isRT ? `https://www.momondo.kr/flight-search/${fr}-${to}/${dep0}/${ret0}/${ad}adults` : `https://www.momondo.kr/flight-search/${fr}-${to}/${dep0}/${ad}adults`,
   };
 
-  // API 가격 셀 (실제 가격)
-  const apiHtml = prices.map(p => {
-    const isBest = p.val === lowestVal && prices.length > 1;
-    const srcUrl = p.src === 'Skyscanner' ? urls.skyscanner : null;
+  // ─── 1. API 실시간 가격 수집 ───
+  const myVal = parseFloat(f.price) || 0;
+  const mySrc = f.source === 'Amadeus' ? 'Amadeus GDS' : 'Skyscanner';
+  const mySrcUrl = f.source === 'Skyscanner' ? urls.skyscanner : null;
+  const apiPrices = [{ src: mySrc, val: myVal, label: fmtPrice(f.price, f.currency), url: mySrcUrl }];
+
+  const other = findOtherSourcePrice(f);
+  if (other) {
+    const otherMatch = allResults.find(r => r.source === other.src && r.legs[0].from === leg0.from);
+    const otherVal = otherMatch ? parseFloat(otherMatch.price) : 0;
+    const otherUrl = other.src === 'Skyscanner' ? urls.skyscanner : null;
+    if (otherVal > 0) apiPrices.push({ src: other.src === 'Amadeus' ? 'Amadeus GDS' : 'Skyscanner', val: otherVal, label: fmtPrice(otherMatch.price, otherMatch.currency), url: otherUrl });
+  }
+  apiPrices.sort((a,b) => a.val - b.val);
+
+  // ─── 2. Skyscanner 에이전트별 실제 가격 ───
+  // 알려진 OTA 이름 → 한국어 + URL 매핑
+  const agentMap = {
+    'Expedia':        { label:'익스피디아',   url: urls.expedia,   cls:'expedia'   },
+    'Trip.com':       { label:'트립닷컴',     url: urls.trip,      cls:'trip'      },
+    'Booking.com':    { label:'부킹닷컴',     url: `https://www.booking.com/flights/${fr.toLowerCase()}/${to.toLowerCase()}.ko.html`, cls:'' },
+    'Kayak':          { label:'카약',         url: urls.kayak,     cls:'kayak'     },
+    'Momondo':        { label:'모몬도',       url: urls.momondo,   cls:'momondo'   },
+    'Kiwi.com':       { label:'키위닷컴',     url: `https://www.kiwi.com/en/search/results/${fr}/${to}/${depDate}`, cls:'' },
+    'Priceline':      { label:'프라이스라인', url: `https://www.priceline.com/flights/search?origin=${fr}&destination=${to}&departure_date=${depDate}`, cls:'' },
+    'CheapOair':      { label:'CheapOair',    url: `https://www.cheapoair.com/flights/cheap-flights-from-${fr}-to-${to}`, cls:'' },
+    'Wego':           { label:'위고',         url: `https://www.wegotravel.com/flights/${fr}-${to}?trip_type=one_way&departure_date=${depDate}`, cls:'' },
+    'Cleartrip':      { label:'클리어트립',   url: `https://www.cleartrip.com/flights/results?from=${fr}&to=${to}&depart_date=${depDate}`, cls:'' },
+  };
+
+  const agents = (f.agents || []).filter(ag => ag.price > 0);
+  const allPrices = [...apiPrices.map(p => p.val), ...agents.map(a => a.price)].filter(v => v > 0);
+  const globalMin = allPrices.length ? Math.min(...allPrices) : 0;
+
+  // ─── 3. API 가격 셀 렌더 ───
+  const apiHtml = apiPrices.map(p => {
+    const isBest = p.val === globalMin;
     const inner = `
-      <div style="display:flex;align-items:center;gap:6px">
+      <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
         <div class="site-name">${p.src}</div>
-        ${isBest ? '<span style="font-size:10px;background:#fef9c3;color:#b45309;padding:2px 6px;border-radius:6px;font-weight:700">최저가</span>' : ''}
+        ${isBest ? '<span style="font-size:9px;background:#fef9c3;color:#b45309;padding:1px 5px;border-radius:5px;font-weight:700">최저가</span>' : ''}
       </div>
-      <div class="site-price" style="${isBest?'color:#16a34a':''}">${p.label}</div>
+      <div class="site-price" style="${isBest?'color:#16a34a;font-size:18px':''}">
+        ${p.label}${isBest&&allPrices.length>1?'<span style="font-size:9px;margin-left:4px;color:#16a34a">▼</span>':''}
+      </div>
       <div class="site-tag tag-api">실시간 API</div>`;
-    return srcUrl
-      ? `<a class="price-cell" href="${srcUrl}" target="_blank" style="${isBest?'border-color:#16a34a':''}">${inner}</a>`
-      : `<div class="price-cell" style="${isBest?'border-color:#16a34a':''}">${inner}</div>`;
+    return p.url
+      ? `<a class="price-cell" href="${p.url}" target="_blank" style="${isBest?'border-color:#16a34a;background:#f0fdf4':''}">${inner}</a>`
+      : `<div class="price-cell" style="${isBest?'border-color:#16a34a;background:#f0fdf4':''}">${inner}</div>`;
   }).join('');
 
-  // 예약 링크 전용 (가격 없음 — 바로가기만)
-  const bookSites = [
-    {n:'네이버항공', url:urls.naver}, {n:'구글플라이트', url:urls.google},
-    {n:'카약', url:urls.kayak}, {n:'익스피디아', url:urls.expedia},
-    {n:'트립닷컴', url:urls.trip}, {n:'인터파크', url:urls.interpark},
-    {n:'하나투어', url:urls.hana}, {n:'모두투어', url:urls.modu}, {n:'모몬도', url:urls.momondo},
-  ];
-  const bookHtml = bookSites.map(s =>
+  // ─── 4. 에이전트별 실제 가격 셀 렌더 ───
+  const agentHtml = agents.map(ag => {
+    const mapped = agentMap[ag.name] || { label: ag.name, url: ag.url || urls.skyscanner, cls: '' };
+    const isBest = ag.price === globalMin;
+    const label = fmtPrice(String(ag.price), f.currency);
+    const inner = `
+      <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+        <div class="site-name">${mapped.label}</div>
+        ${isBest ? '<span style="font-size:9px;background:#fef9c3;color:#b45309;padding:1px 5px;border-radius:5px;font-weight:700">최저가</span>' : ''}
+      </div>
+      <div class="site-price" style="${isBest?'color:#16a34a;font-size:18px':''}">${label}</div>
+      <div class="site-tag tag-api">Skyscanner 실가</div>`;
+    return `<a class="price-cell" href="${mapped.url}" target="_blank" style="${isBest?'border-color:#16a34a;background:#f0fdf4':''}">${inner}</a>`;
+  }).join('');
+
+  // ─── 5. API 미지원 예약 링크 (에이전트에 없는 것만) ───
+  const coveredNames = new Set(agents.map(ag => (agentMap[ag.name]?.label || ag.name)));
+  const staticSites = [
+    {n:'네이버항공',  url:urls.naver},
+    {n:'구글플라이트',url:urls.google},
+    {n:'인터파크',    url:urls.interpark},
+    {n:'하나투어',    url:urls.hana},
+    {n:'모두투어',    url:urls.modu},
+    {n:'카약',        url:urls.kayak},
+    {n:'익스피디아',  url:urls.expedia},
+    {n:'트립닷컴',    url:urls.trip},
+    {n:'모몬도',      url:urls.momondo},
+  ].filter(s => !coveredNames.has(s.n));
+
+  const staticHtml = staticSites.map(s =>
     `<a class="price-cell" href="${s.url}" target="_blank">
       <div class="site-name">${s.n}</div>
-      <div class="site-price" style="font-size:12px;color:var(--blue)">예약하러 가기 →</div>
-      <div class="site-tag tag-link">API 미지원</div>
+      <div class="site-price" style="font-size:12px;color:var(--blue)">가격 확인 →</div>
+      <div class="site-tag tag-link">바로가기</div>
     </a>`).join('');
 
+  const realCount = apiPrices.length + agents.length;
   return `<div class="price-compare">
-    <div class="price-compare-title">💰 가격 비교 · ${isRT?'왕복':'편도'} ${ad}인 — API 실시간가 ${prices.length}개 | 예약 바로가기 ${bookSites.length}개</div>
-    <div class="price-table">${apiHtml}${bookHtml}</div>
+    <div class="price-compare-title">💰 가격 비교 · ${isRT?'왕복':'편도'} ${ad}인 — 실시간 가격 ${realCount}개 확인됨</div>
+    <div class="price-table">${apiHtml}${agentHtml}${staticHtml}</div>
   </div>`;
 }
 
@@ -1115,6 +1183,9 @@ function renderResults(results) {
     const stopPill = leg0.stops===0
       ? `<span class="stop-pill direct">직항</span>`
       : `<span class="stop-pill via">${leg0.stops}회 경유</span>`;
+    const depDateStr = (leg0.fromTime||curSearch.departDate||'').slice(0,10);
+    const daysLeft = depDateStr ? Math.floor((new Date(depDateStr)-new Date())/86400000) : 0;
+    const earlyBadge = daysLeft >= 60 ? `<span class="early-badge">🐦 얼리버드 ${daysLeft}일 전</span>` : '';
     let returnRow = '';
     if (f.legs[1]) {
       const l1=f.legs[1];
@@ -1148,7 +1219,7 @@ function renderResults(results) {
         </div>
         <div class="price-col">
           <div class="price-big">${fmtPrice(f.price,f.currency)}</div>
-          <div style="margin-top:4px">${srcBadge}</div>
+          <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end">${srcBadge}${earlyBadge}</div>
           <div class="price-sub">1인 기준</div>
         </div>
         <div class="card-btns">
@@ -1242,6 +1313,39 @@ function toast(msg) {
   el.textContent = msg; el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 3000);
 }
+
+// ── SHARE ──
+function shareSearch() {
+  if (!curSearch.from) { toast('먼저 검색을 해주세요'); return; }
+  const p = new URLSearchParams({
+    from: curSearch.from, to: curSearch.to,
+    dep: curSearch.departDate, type: curSearch.tripType,
+    ...(curSearch.returnDate ? {ret: curSearch.returnDate} : {})
+  });
+  const url = `${location.origin}${location.pathname}?${p}`;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => toast('검색 링크 복사됨 🔗'));
+  } else {
+    prompt('링크를 복사하세요:', url);
+  }
+}
+
+// 페이지 로드 시 URL 파라미터 자동 복원
+window.addEventListener('DOMContentLoaded', () => {
+  const p = new URLSearchParams(location.search);
+  if (p.get('from') && p.get('to')) {
+    document.getElementById('fromCode').value = p.get('from');
+    document.getElementById('fromInput').value = p.get('from');
+    document.getElementById('fromInput').classList.add('filled');
+    document.getElementById('toCode').value = p.get('to');
+    document.getElementById('toInput').value = p.get('to');
+    document.getElementById('toInput').classList.add('filled');
+    if (p.get('dep')) document.getElementById('departDate').value = p.get('dep');
+    if (p.get('ret')) document.getElementById('returnDate').value = p.get('ret');
+    if (p.get('type')) setTrip(p.get('type'));
+    setTimeout(doSearch, 300);
+  }
+});
 
 // ── PRICE CALENDAR ──
 let calState = { open: false, month: '', data: [] };
